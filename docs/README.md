@@ -2,7 +2,7 @@
 The TACACS+ protocol is used by network departments for access control.  In general it provides **authentication** (validate id/password), **authorization** (return authorized roles for the authenticated "user"), and **accounting** (log stuff related to the "user" activity).  Collectively, this is abbreviated as AAA.  For more information, try the Wikipedia page: https://en.wikipedia.org/wiki/TACACS
 
 ## Why
-This Java API was developed to integrate our customer's existing TACACS+ server as the AAA for our application, [TrapStation(TM)](http://www.augur.com/) -- a fancy SNMP trap forwarder.  Existing open-source Java implementations of TACACS+ clients at the time (2015) were not complete enough for this purpose.  (Although we thank them for their open source, which helped us understand the formal specifications!)
+This Java API was developed to integrate our customer's existing TACACS+ server as the AAA for our application, [TrapStation(TM)](http://www.augur.com/) -- a fancy SNMP trap forwarder.  Existing open-source Java implementations of TACACS+ clients at the time (2015) were not complete enough for our purposes.  (Although we thank them for their open source, which helped us understand the formal specifications!)
 
 
 ## Understanding TACACS+
