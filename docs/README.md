@@ -1,28 +1,12 @@
 # Introduction
-The TACACS+ protocol is used by network departments for access control.  
-In general it provides **authentication** (validate id/password), 
-**authorization** (return authorized roles for the authenticated "user"), 
-and **accounting** (log stuff related to the "user" activity).  
-Collectively, this is abbreviated as AAA.  
-For more information, try the Wikipedia page: https://en.wikipedia.org/wiki/TACACS
+The TACACS+ protocol is used by network departments for access control.  In general it provides **authentication** (validate id/password), **authorization** (return authorized roles for the authenticated "user"), and **accounting** (log stuff related to the "user" activity).  Collectively, this is abbreviated as AAA.  For more information, try the Wikipedia page: https://en.wikipedia.org/wiki/TACACS
 
 ## Why
-This Java API was developed to integrate our customer's existing TACACS+ server 
-as the AAA for our application, 
-[TrapStation(TM)](http://www.augur.com/) -- a fancy SNMP trap forwarder.  
-Existing open-source Java implementations of TACACS+ clients at the time (2015) 
-were not complete enough for this purpose.  (Although we thank them for their 
-open source, which helped us understand the formal specifications!)
+This Java API was developed to integrate our customer's existing TACACS+ server as the AAA for our application, [TrapStation(TM)](http://www.augur.com/) -- a fancy SNMP trap forwarder.  Existing open-source Java implementations of TACACS+ clients at the time (2015) were not complete enough for this purpose.  (Although we thank them for their open source, which helped us understand the formal specifications!)
 
 
 ## Understanding TACACS+
-You will need a good understanding of TACACS+.  
-The IETF documentation is the best source, although necessarily technical.  
-At this time (2016), the "The TACACS+ Protocol" draft document is being 
-actively updated, after sitting idle for nearly two decades.  
-Eventually, it will likely become an official RFC, 
-published at: <http://ietf.org/>  Until then, the latest draft of the 
-documentation is at: <https://datatracker.ietf.org/doc/draft-ietf-opsawg-tacacs/>
+You will need a good understanding of TACACS+.  The IETF documentation is the best source, although necessarily technical.  At this time (2016), the "The TACACS+ Protocol" draft document is being actively updated, after sitting idle for nearly two decades.  Eventually, it will likely become an official RFC, published at: <http://ietf.org/>  Until then, the latest draft of the documentation is at: <https://datatracker.ietf.org/doc/draft-ietf-opsawg-tacacs/>
 
 ## Compliance of this Code
 This initial implementation was developed based on the IETF draft document version "draft-ietf-opsawg-tacacs-00" dated December 15, 2015.  Updates in 2016 update include support for TLS (encryption) but that has not been addressed in this code, except for adding a related flag in the enumeration of constants.
