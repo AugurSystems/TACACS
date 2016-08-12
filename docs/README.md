@@ -9,7 +9,7 @@ This Java API was developed to integrate our customer's existing TACACS+ server 
 You will need a good understanding of TACACS+.  The IETF documentation is the best source, although necessarily technical.  At this time (2016), the "The TACACS+ Protocol" draft document is being actively updated, after sitting idle for nearly two decades.  Eventually, it will likely become an official RFC, published at: <http://ietf.org/>  Until then, the latest draft of the documentation is at: <https://datatracker.ietf.org/doc/draft-ietf-opsawg-tacacs/>
 
 ## Compliance of this Code
-This initial implementation was developed based on the IETF draft document version "draft-ietf-opsawg-tacacs-00" dated December 15, 2015.  Updates in 2016 update include support for TLS (encryption) but that has not been addressed in this code, except for adding a related flag in the enumeration of constants.
+This initial implementation was developed based on the IETF draft document version "draft-ietf-opsawg-tacacs-00" dated December 15, 2015.  Updates in 2016 update include support for TLS encryption but that has not been addressed in this code, except for adding a related flag in the enumeration of constants.
 
 # Getting Started
 A TACACS+ **client** will contact a server to authenticate a user, and possibly retrieve attributes that can be used to determine that user's authorizations within your application.  And your application might want to record some logs of user activity.  If this sounds like what you want, look at the `TacacsClient` class.  The `static` methods at the bottom are examples.  Everything you need to integrate a Java-based application to use TACACS+ for AAA purposes should be here.  You're welcome.
