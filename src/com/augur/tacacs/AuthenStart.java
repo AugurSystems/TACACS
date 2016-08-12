@@ -76,26 +76,26 @@ public class AuthenStart extends Packet
 	 * @param key The byte[] secret key shared between the client and server.
 	 * @throws IOException if there is a problem writing to the given OutputStream.
 	 */
-	@Override	void write(OutputStream out, byte[] key) throws IOException
+	@Override void write(OutputStream out, byte[] key) throws IOException
 	{
-      byte[] userBytes = username==null?null:username.getBytes(StandardCharsets.UTF_8);
-      byte[] dataBytes = data==null?null:data.getBytes(StandardCharsets.UTF_8);
-      byte[] portBytes = port==null?null:port.getBytes(StandardCharsets.UTF_8);
-      byte[] remoBytes = rem_addr==null?null:rem_addr.getBytes(StandardCharsets.UTF_8);
-      ByteArrayOutputStream body = new ByteArrayOutputStream();
-      body.write(action.code());
-      body.write(priv_lvl);
-      body.write(type.code());
-      body.write(authen_service.code());
-      body.write(userBytes==null?0:userBytes.length);
-      body.write(portBytes==null?0:portBytes.length);
-      body.write(remoBytes==null?0:remoBytes.length);
-      body.write(dataBytes==null?0:dataBytes.length);
-      if (userBytes!=null) { body.write(userBytes); }
-      if (portBytes!=null) { body.write(portBytes); }
-      if (remoBytes!=null) { body.write(remoBytes); }
-      if (dataBytes!=null) { body.write(dataBytes); }
-			header.writePacket(out, body.toByteArray(), key);
+		byte[] userBytes = username==null?null:username.getBytes(StandardCharsets.UTF_8);
+		byte[] dataBytes = data==null?null:data.getBytes(StandardCharsets.UTF_8);
+		byte[] portBytes = port==null?null:port.getBytes(StandardCharsets.UTF_8);
+		byte[] remoBytes = rem_addr==null?null:rem_addr.getBytes(StandardCharsets.UTF_8);
+		ByteArrayOutputStream body = new ByteArrayOutputStream();
+		body.write(action.code());
+		body.write(priv_lvl);
+		body.write(type.code());
+		body.write(authen_service.code());
+		body.write(userBytes==null?0:userBytes.length);
+		body.write(portBytes==null?0:portBytes.length);
+		body.write(remoBytes==null?0:remoBytes.length);
+		body.write(dataBytes==null?0:dataBytes.length);
+		if (userBytes!=null) { body.write(userBytes); }
+		if (portBytes!=null) { body.write(portBytes); }
+		if (remoBytes!=null) { body.write(remoBytes); }
+		if (dataBytes!=null) { body.write(dataBytes); }
+		header.writePacket(out, body.toByteArray(), key);
 	}
 	
 }

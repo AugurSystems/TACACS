@@ -21,11 +21,11 @@ import java.util.List;
 
 public class Tacacs extends Thread
 {
-  public static final int PORT_TACACS = 49;
+	public static final int PORT_TACACS = 49;
 	public static final boolean DEBUG = false;
 
 	private final List<Session> sessions;
-  private final byte[] key;
+	private final byte[] key;
 	private volatile boolean runnable;
 	private final Socket socket;
 	private final DataInputStream din;
@@ -65,7 +65,7 @@ public class Tacacs extends Thread
 	}
 	
 	/** Reads packets from server and dispatches them to sessions for handling. */
-	@Override	public void run()
+	@Override public void run()
 	{
 		IOException error = null;
 		while(runnable)

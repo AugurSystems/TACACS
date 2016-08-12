@@ -19,7 +19,7 @@ import java.util.concurrent.TimeoutException;
  */
 public abstract class Session
 {
-  static final byte FLAG_ZERO = (byte)0x0;
+	static final byte FLAG_ZERO = (byte)0x0;
 	final Tacacs tacacs;
 	
 	/* Common fields for all actions; provided in client's first packet */

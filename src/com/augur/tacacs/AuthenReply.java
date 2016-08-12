@@ -79,7 +79,7 @@ public class AuthenReply extends Packet
 	 * @param key The byte[] secret key shared between the client and server.
 	 * @throws IOException if there is a problem writing to the given OutputStream.
 	 */
-	@Override	void write(OutputStream out, byte[] key) throws IOException
+	@Override void write(OutputStream out, byte[] key) throws IOException
 	{
 		byte[] smsgBytes = server_msg==null?null:server_msg.getBytes(StandardCharsets.UTF_8);
 		byte[] dataBytes = data==null?null:data.getBytes(StandardCharsets.UTF_8);
