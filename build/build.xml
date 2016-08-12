@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- 
-	This is a build script for ANT.
+	This is an ANT script for building TACACS+.
 	Just run 'ant' in the directory containing this build.xml.
 	ANT will compile and jar the results into ../dist/tacacs.jar
 -->
