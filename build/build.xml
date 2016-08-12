@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+	This is a build script for ANT.
+	Just run 'ant' in the directory containing this build.xml.
+	ANT will compile and jar the results into ../dist/tacacs.jar
+-->
 <project basedir=".." default="build" name="TACACS">
 	<description>
 		API for TACACS+ clients or servers
@@ -16,10 +21,18 @@
 	<property name ="tacacsJar" value="${distDir}/tacacs.jar"/>
 
 
-	<target name="build" description="Build EVERYTHING">
+	<target name="build" description="Build tacacs.jar">
 		<antcall target="clean"/>
 		<antcall target="env"/>
 		<antcall target="compile+jar"/>
+	</target>
+
+
+	<target name="clean">
+		<delete failonerror="false" includeEmptyDirs="true" verbose="false">
+			<fileset dir="${distDir}" includes="*.jar"/>
+			<fileset dir="${classes}" includes="**/*"/>
+		</delete>
 	</target>
 
 
@@ -44,6 +57,7 @@
 			<include name="com/augur/tacacs/*.java"/>
 		</javac>
 		<tstamp><format property="timestamp" pattern="MMMM dd, yyyy hh:mm:ss aa z"/></tstamp>
+		<echo>About to jar...</echo>
 		<jar compress="true" destfile="${tacacsJar}">
 			<manifest>
 				<attribute name="Created-By" value="${Created-By}"/>
