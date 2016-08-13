@@ -10,7 +10,7 @@ You will need a good understanding of TACACS+.  The IETF documentation is the be
 
 
 # Getting Started
-A TACACS+ **client** will contact a server to authenticate a user, and possibly retrieve attributes that can be used to determine that user's authorizations within your application.  And your application might want to record some logs of user activity.  If this sounds like what you want, look at the `TacacsClient` class.  The `static` methods at the bottom are examples.  Everything you need to integrate a Java-based application to use TACACS+ for AAA purposes should be here.
+A TACACS+ **client** will contact a server to authenticate a user, and possibly retrieve attributes that can be used to determine that user's authorizations within your application.  And your application might want to record some logs of user activity.  If this sounds like what you want, look at the `ExampleClient` class.  The `static` methods at the bottom are examples.  Everything you need to integrate a Java-based application to use TACACS+ for AAA purposes should be here.
 
 A TACACS+ **server** must handle requests from users, which may be software applications, or more likely, networking equipment (routers, etc.).  A server must respond to requests based on its configuration (a database, files, whatever).  A good server may have a GUI to aid configuration, manage logs, etc.  If this sounds like you, then look at the `TacacsServer` class, which creates a socket server to handle incoming requests.  It decodes the packets into the appropriate Java objects, and then the `SessionServer` class blindly returns failure responses to the client.  It's up to you to replace those dummy responses with code that determines real responses based on a configuration system and policies that you also design.  This "skeleton" code worked fine for testing the client features of this API, but you'll have to do a lot of work in order to develop a real TACACS+ server.  However, this API will give you a head start -- a good step beyond fiddling with the bits and bytes of the protocol.
 
@@ -19,7 +19,7 @@ There is a separate Java class for each type of packet sent or received.  All pa
 
 The IETF document specifies many flags and values with formal upper-case names, organized hierarchically (mostly).  In this API, they are all encapsulated in the `TACACS_PLUS` Java class, which contains a bunch of nested enumerations.  It looks ugly!  However, in use, it makes your code very readable since the names nicely mirror the documentation, and your IDE's code-completion should help a lot too.  For example, to use the flag documented as *TAC_PLUS_AUTHEN_LOGIN*, the Java code would reference the enumeration `TAC_PLUS.AUTHEN.LOGIN`
 
-As noted above, you should start exploring the code from either `TacacsClient`, or `TacacsServer` and `SessionServer`.
+As noted above, you should start exploring the code from either `ExampleClient`, or `TacacsServer` and `SessionServer`.
 
 ## Compliance
 This implementation was developed based on the IETF draft document version "draft-ietf-opsawg-tacacs-00" dated December 15, 2015.  Updates in 2016 are mostly for clarification, but also include support for TLS encryption.  TLS has not been addressed in this code, except for adding a related flag in the enumeration of constants.
