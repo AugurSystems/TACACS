@@ -55,6 +55,7 @@
 			includeAntRuntime="false"
 		>
 			<include name="com/augur/tacacs/*.java"/>
+			<exclude name="com/augur/tacacs/ExampleClient.java"/>
 		</javac>
 		<tstamp><format property="timestamp" pattern="MMMM dd, yyyy hh:mm:ss aa z"/></tstamp>
 		<echo>About to jar...</echo>
