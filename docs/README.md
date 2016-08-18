@@ -17,7 +17,7 @@ A TACACS+ **server** must handle requests from users, which may be software appl
 ## Code Overview
 There is a separate Java class for each type of packet sent or received.  All packet types for developing a client or server are fully implemented.
 
-The IETF document specifies many flags and values with formal upper-case names, organized hierarchically (mostly).  In this API, they are all encapsulated in the `TACACS_PLUS` Java class, which contains a bunch of nested enumerations.  It looks ugly!  However, in use, it makes your code very readable since the names nicely mirror the documentation, and your IDE's code-completion should help a lot too.  For example, to use the flag documented as *TAC_PLUS_AUTHEN_LOGIN*, the Java code would reference the enumeration `TAC_PLUS.AUTHEN.LOGIN`
+The IETF document specifies many flags and values with formal upper-case names, organized hierarchically (mostly).  In this API, they are all encapsulated in the `TACACS_PLUS` Java class, which contains a bunch of nested enumerations.  It looks ugly!  However, in use, it makes your code very readable since the names nicely mirror the documentation, and your IDE's code-completion tool will like the scoped enumerations since they will help you logically reference these constants.  For example, to use the flag documented as *TAC_PLUS_AUTHEN_LOGIN*, the Java code would reference the enumeration `TAC_PLUS.AUTHEN.LOGIN`
 
 As noted above, you should start exploring the code from either `ExampleClient`, or `TacacsServer` and `SessionServer`.
 
