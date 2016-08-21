@@ -17,7 +17,7 @@ A TACACS+ **server** must handle requests from users, which may be software appl
 ## Code Overview
 There is a separate Java class for each type of packet sent or received.  All packet types for developing a client or server are fully implemented.
 
-The IETF document specifies many flags and values with formal upper-case names, organized hierarchically (mostly).  In this API, they are all encapsulated in the `TACACS_PLUS` Java class, which contains a bunch of nested enumerations.  It looks ugly!  However, in use, it makes your code very readable since the names nicely mirror the documentation, and your IDE's code-completion should help a lot too.  For example, to use the flag documented as *TAC_PLUS_AUTHEN_LOGIN*, the Java code would reference the enumeration `TAC_PLUS.AUTHEN.LOGIN`
+The IETF document specifies many flags and values with formal upper-case names, organized hierarchically (mostly).  In this API, they are all encapsulated in the `TACACS_PLUS` Java class, which contains a bunch of nested enumerations.  It looks ugly!  However, in use, it makes your code very readable since the names nicely mirror the documentation, and your IDE's code-completion tool will like the scoped enumerations since they will help you logically reference these constants.  For example, to use the flag documented as *TAC_PLUS_AUTHEN_LOGIN*, the Java code would reference the enumeration `TAC_PLUS.AUTHEN.LOGIN`
 
 As noted above, you should start exploring the code from either `ExampleClient`, or `TacacsServer` and `SessionServer`.
 
@@ -26,7 +26,7 @@ This implementation was developed based on the IETF draft document version "draf
 
 
 
-# TACACS+ Critique
+# TACACS+ Wishes
 For the most part, TACACS+ is a clean single query/reply exchange between a client and server.  A notable exception is the ASCII authentication sub-type, in which the server can reply with a question.  (Note that *ASCII* here is just the name of the authentication type; it doesn't have a strong relation to the ASCII character encoding, other than there's some text that passes back and forth.)  Most importantly, the ASCII authentication type is interactive... The client code has to reply with an answer, obtained either from some client configuration or from actual user interaction.  In typical scenarios, the client tries to login with just an ID, then the server asks for a password.  For this simple ID/password example, your client could choose to use the PAP authentication type instead of ASCII, since PAP provides for an ID and password in one packet, and the server replies with a simple pass/fail response.  However, ASCII also exists for more advanced purposes, such as two-factor authentication.  For example, the server might transmit a unique code number to the user's phone, while prompting the user to enter the code into the client app, which would then send it back to the TACACS+ server, thus completing a secondary proof of identity.  
 
 For cases like two-factor authentication, ASCII is the only option in TACACS+.  Yet ASCII's interactive nature is an oddball.  It works so much differently than the other authentication types.  That makes the code more complex.  We wish interactive authentication was defined as a completely separate part of the protocol, with its own family of packet types.  Maybe even a new packet type for each and every unique authentication protocol that comes along over time.  It would have made this and future API implementations significantly less complex, easier to maintain, and therefore less susceptible to bugs.  
