@@ -12,7 +12,7 @@ You will need a good understanding of TACACS+.  The IETF documentation is the be
 # Getting Started
 A TACACS+ **client** will contact a server to authenticate a user, and possibly retrieve attributes that can be used to determine that user's authorizations within your application.  And your application might want to record some logs of user activity.  If this sounds like what you want, look at the `ExampleClient` class. Everything needed to integrate a Java-based application to use TACACS+ for AAA purposes should be in this API for you.
 
-A TACACS+ **server** must handle requests from users, which may be software applications, or more likely, networking equipment (routers, etc.).  A server must respond to requests based on its configuration (a database, files, whatever).  A good server may have a GUI to aid configuration, manage logs, etc.  If this sounds like you, then look at the `TacacsServer` class, which creates a socket server to handle incoming requests.  It decodes the packets into the appropriate Java objects, and then the `SessionServer` class blindly returns failure responses to the client.  It's up to you to replace those dummy responses with code that determines real responses based on a configuration system and policies that you also design.  This "skeleton" code worked fine for testing the client features of this API, but you'll have to do a lot of work in order to develop a real TACACS+ server.  However, this API will give you a head start -- a good step beyond fiddling with the bits and bytes of the protocol.
+A TACACS+ **server** must handle requests from users, which may be software applications, or more likely, networking equipment (routers, etc.).  A server must respond to requests based on its configuration (a database, files, whatever).  A good server may have a GUI to aid configuration, manage logs, etc.  If this sounds like you, then look at the `TacacsServer` class, which creates a socket server to handle incoming requests.  It decodes the packets into the appropriate Java objects, and then the `SessionServer` class blindly returns negatory responses to the client.  (This "skeleton" worked fine for testing this API's client features.)  To develop a real server, you'll need to replace those dummy responses with code that references a configuration system and policies that you design.  This API will give you a head start &mdash; a good step beyond fiddling with the bits and bytes of the protocol.
 
 ## Code Overview
 There is a separate Java class for each type of packet sent or received.  All packet types for developing a client or server are fully implemented.
@@ -37,6 +37,6 @@ We've made these arguments to the authors of the new draft specification.  They 
 
 
 
-# Support or Contact
-You can [contact Augur Systems](http://www.augur.com/) for help, or commercial support.
+# Feedback &amp; Support
+We'd love to hear from you if you're using this library, have suggestions, (or even if you found a better library).   Please [contact Augur Systems](http://www.augur.com/).
 
