@@ -28,6 +28,7 @@ This implementation was developed based on the IETF draft document version "draf
 There is an executable that will login via command-line, via PAP.
 
 ### Failure
+```
 $ java -jar tacacs.jar 10.0.1.245 trapstation
 
 Username: user1
@@ -35,8 +36,9 @@ Username: user1
 Password: 
 > "User does not belong to specified group"
 TACACS+: Login success? false
-
+```
 ### Success
+```
 $ java -jar tacacs.jar 10.0.1.245 trapstation
 
 Username: user1
@@ -45,7 +47,7 @@ Password:
 TACACS+: Login success? true
 
 TACACS+: Authorization success? true
-
+```
 
 # TACACS+ Wishes
 For the most part, TACACS+ is a clean single query/reply exchange between a client and server.  A notable exception is the ASCII authentication sub-type, in which the server can reply with a question.  (Note that *ASCII* here is just the name of the authentication type; it doesn't have a strong relation to the ASCII character encoding, other than there's some text that passes back and forth.)  Most importantly, the ASCII authentication type is interactive... The client code has to reply with an answer, obtained either from some client configuration or from actual user interaction.  In typical scenarios, the client tries to login with just an ID, then the server asks for a password.  For this simple ID/password example, your client could choose to use the PAP authentication type instead of ASCII, since PAP provides for an ID and password in one packet, and the server replies with a simple pass/fail response.  However, ASCII also exists for more advanced purposes, such as two-factor authentication.  For example, the server might transmit a unique code number to the user's phone, while prompting the user to enter the code into the client app, which would then send it back to the TACACS+ server, thus completing a secondary proof of identity.  
