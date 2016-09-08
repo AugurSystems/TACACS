@@ -28,6 +28,7 @@ This implementation was developed based on the IETF draft document version "draf
 There is an executable that will login via command-line, via PAP.
 
 ### Failure
+Note that the error message in quotes is coming from your TACACS+ server, not this TACACS+ library.
 <pre>
 $ <b>java -jar tacacs.jar 10.0.1.245 trapstation</b>
 
