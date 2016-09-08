@@ -25,11 +25,12 @@ As noted above, you should start exploring the code from either `ExampleClient`,
 This implementation was developed based on the IETF draft document version "draft-ietf-opsawg-tacacs-00" dated December 15, 2015.  Updates in 2016 are mostly for clarification, but also include support for TLS encryption.  TLS has not been addressed in this code, except for adding a related flag in the enumeration of constants.
 
 ## Example
-There is an executable that will login via command-line, via PAP.
+There is an executable referenced in the jar that will login via command-line, via PAP.  The command requires two arguments: the TACACS+ server's address, and the shared secret key.  Example usage is below.  Note that the error message in quotes is coming from your TACACS+ server, not this TACACS+ library.
+
 
 ### Failure
 <pre>
-$ <b>java -jar tacacs.jar 10.0.1.245 trapstation</b>
+$ <b>java -jar tacacs.jar 10.0.1.245 secretKEY</b>
 
 Username: <b>user1</b>
 
@@ -37,12 +38,10 @@ Password: <b>******</b>
 > "User does not belong to specified group"
 TACACS+: Login success? false
 </pre>
-Note that the error message in quotes is coming from your TACACS+ server, not this TACACS+ library.
-
 
 ### Success
 <pre>
-$ <b>java -jar tacacs.jar 10.0.1.245 trapstation</b>
+$ <b>java -jar tacacs.jar 10.0.1.245 secretKEY</b>
 
 Username: <b>user1</b>
 
