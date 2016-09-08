@@ -32,8 +32,9 @@ public class TacacsClient extends Object
 	private String[] hosts, keys;
 	private int[] ports;
 	private final int timeoutMillis;
+	final boolean singleConnect;
 	/** Note: instance methods are synchronized to protect access to tacacs. */
-	private Tacacs tacacs;
+	private TacacsReader tacacs;
 
 	/**
 	 * Constructs a new TacacsClient that may be used for multiple calls to newSession().  
@@ -45,28 +46,33 @@ public class TacacsClient extends Object
 	 *   less than one minute (or whatever AJAX call time-out is used in browsers) to
 	 *   avoid confusing error messaging from browsers when AJAX calls time-out on 
 	 *   the browser before the socket elegantly times-out in TrapStation code.
+	 * @param singleConnect A boolean indicating if a single socket connection
+	 *   can be reused for multiple sessions, if the server also agrees;
+	 *   it seems this must be set 'false' for Cisco ACS which closes socket
+	 *   despite offering to accept SINGLE_CONNECT mode.
 	 */
-	public TacacsClient(String host, String key, int timeoutMillis)
+	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect)
 	{
 		this.timeoutMillis = timeoutMillis;
 		this.keys = key.split("[,\\s]+");
 		this.hosts = host.split("[,\\s]+");
 		this.ports = new int[hosts.length];
+		this.singleConnect = singleConnect;
 		for (int i=hosts.length-1; i>=0; i--)
 		{
 			int j = hosts[i].indexOf(':');
 			if (j>=0)
 			{
-				String p = (j<(hosts[i].length()-2)) ? hosts[i].substring(j+1) : Integer.toString(Tacacs.PORT_TACACS);
+				String p = (j<(hosts[i].length()-2)) ? hosts[i].substring(j+1) : Integer.toString(TacacsReader.PORT_TACACS);
 				try { ports[i] = Integer.parseInt(p); } 
 				catch (NumberFormatException nfe) 
 				{ 
-					ports[i] = Tacacs.PORT_TACACS; 
-					System.out.println("TACACS+: Bad port assigned for host, \""+hosts[i]+"\".  Using default port "+Tacacs.PORT_TACACS+" instead.");
+					ports[i] = TacacsReader.PORT_TACACS; 
+					System.out.println("TACACS+: Bad port assigned for host, \""+hosts[i]+"\".  Using default port "+TacacsReader.PORT_TACACS+" instead.");
 				}
 				hosts[i]=hosts[i].substring(0,j);
 			}
-			else { ports[i] = Tacacs.PORT_TACACS; }
+			else { ports[i] = TacacsReader.PORT_TACACS; }
 		}
 	}
 
@@ -77,7 +83,7 @@ public class TacacsClient extends Object
 	 */
 	public TacacsClient(String host, String key)
 	{
-		this(host, key, 5000);
+		this(host, key, 5000, false);
 	}
 	
 
@@ -85,9 +91,10 @@ public class TacacsClient extends Object
 	/**
 	 * Creates a new session and registers it with communications thread, to process
 	 * the server's reply.  Note that a session may only be used once, per protocol specs!  
-	 * So if you need to authenticate a user, then ask for authorizations, that requires two
-	 * sessions.  (However, those sessions will reuse the underlying socket 
-	 * connection to the remote TACACS+ server, so it's not too inefficient.)  
+ So if you need to authenticate a user, then ask for authorizations, that requires two
+ sessions.  (However, those sessions will reuse the underlying socket 
+ connection to the remote TACACS+ server, so it's not too inefficient.)  
+ Synchronized to protect creation/shutdown of TacacsReader.
 	 * 
 	 * @param svc  The TAC_PLUS.AUTHEN.SVC requesting the action
 	 * @param port The String port identifier where the user is attached; 
@@ -103,8 +110,8 @@ public class TacacsClient extends Object
 	 */
 	public synchronized SessionClient newSession(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl) throws IOException
 	{
-		Tacacs t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
-		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t);
+		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
+		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, singleConnect);
 		t.addSession(s);
 		return s;
 	}
@@ -112,17 +119,20 @@ public class TacacsClient extends Object
 	/**
 	 * This is the same as the other newSessionInteractive(), except it includes a
 	 * UserInterface parameter.  This is only needed for interactive authentications,
-	 * i.e. authentication type = TAC_PLUS.AUTHEN.TYPE.ASCII.  
+ i.e. authentication type = TAC_PLUS.AUTHEN.TYPE.ASCII.  
+ Synchronized to protect creation/shutdown of TacacsReader.
 	 */
 	public synchronized SessionClient newSessionInteractive(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, UserInterface ui) throws IOException
 	{
-		Tacacs t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
-		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, ui);
+		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
+		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, ui, singleConnect);
 		t.addSession(s);
 		return s;
 	}
 	
-	
+	/**
+	 * Synchronized to protect creation/shutdown of TacacsReader.
+	 */
 	public synchronized void shutdown()
 	{
 		if (tacacs!=null && !tacacs.isShutdown()) 
@@ -133,7 +143,10 @@ public class TacacsClient extends Object
 	}
 	
 		
-	private synchronized Tacacs getTacacs() throws IOException
+	/**
+	 * Synchronized to protect creation/shutdown of TacacsReader.
+	 */
+	private synchronized TacacsReader getTacacs() throws IOException
 	{
 		if (tacacs==null || tacacs.isShutdown())
 		{
@@ -147,16 +160,16 @@ public class TacacsClient extends Object
 					sock = new Socket();
 					sock.connect(new InetSocketAddress(hosts[i],ports[i]), timeoutMillis); // throws IOException
 					String key = (i<keys.length) ? keys[i] : keys[keys.length-1]; // reuse last only if not enough
-					tacacs = new Tacacs(sock, key);
+					tacacs = new TacacsReader(sock, key);
 					tacacs.start();
-					if (i>0) { System.out.println("TACACS+: Connected to server at "+hosts[i]+":"+ports[i]); }
+					System.out.println("TACACS+: Connected to server at "+hosts[i]+":"+ports[i]);
 					return tacacs;
 				}
 				catch(IOException ioe) 
 				{ 
 					if (sock!=null) { try { sock.close(); } catch (IOException ioe2) { } }
+					tacacs = null;
 					System.out.println("TACACS+: Unable to contact TACACS+ server @ "+hosts[i]+" ("+ioe+")"); 
-					continue; 
 				}
 			}
 			if (tacacs == null) { throw new IOException("Unable to contact any TACACS+ server(s)."); }
@@ -164,6 +177,27 @@ public class TacacsClient extends Object
 		return tacacs;
 	}
 	
+
+//	/**
+//	 * This is a convenience method that creates a new session using some default 
+//	 * default parameters, then attempts to authenticate.  For full control, 
+//	 * instantiate your own SessionClient with your own parameters, then call its 
+//	 * authenticate_PAP() method.
+//	 * 
+//	 * @param username The String id for authentication
+//	 * @param password The String password for authentication
+//	 * @return AuthenReply
+//	 * @throws IOException if there is a problem communicating with the TACACS+ server.
+//	 * @throws TimeoutException if there is a time-out waiting for the TACACS+
+//	 *   server to respond to the successfully transmitted authentication request.
+//	 */
+//	public AuthenReply authenticate_PAP(String username, String password) throws IOException, TimeoutException
+//	{
+//		SessionClient session = newSession(TAC_PLUS.AUTHEN.SVC.LOGIN, "console", "localhost", TAC_PLUS.PRIV_LVL.USER.code()); // throws exceptions if can't contact TACACS+
+//		return session.authenticate_PAP(username, password);
+//	}
+	
+
 	// =========================== EXAMPLES ======================================
 	
 	/**

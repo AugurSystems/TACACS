@@ -11,7 +11,7 @@ public class SessionServer extends Session
 	
 	
 	/** Server-side constructor */
-	SessionServer(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, Tacacs tacacs, byte[] sessionID)
+	SessionServer(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, byte[] sessionID)
 	{
 		super(svc, port, rem_addr, priv_lvl, tacacs, sessionID);
 	}

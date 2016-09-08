@@ -19,7 +19,7 @@ import java.util.concurrent.TimeoutException;
  * Copyright 2016 Augur Systems, Inc.  All rights reserved.
  */
 
-public class TacacsServer extends Tacacs
+public class TacacsServer extends TacacsReader
 {
 
 

@@ -11,22 +11,35 @@ public class SessionClient extends Session
 	private static final int TIMEOUT_MILLIS = 5000; // TODO: don't hard-code
 	private static final boolean DEBUG = false;
 	private final UserInterface ui;
+	private final boolean singleConnect;
 	
-	/** Client-side constructor; end-user should use newSession() in Tacacs. */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, Tacacs tacacs)
+	/** Client-side constructor; end-user should use newSession() in TacacsReader. */
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect)
 	{
-		this(svc, port, rem_addr, priv_lvl, tacacs, null);
+		this(svc, port, rem_addr, priv_lvl, tacacs, null, singleConnect);
 	}
 	
 	/** 
-	 * Client-side constructor, only needed for interactive (ASCII) login, 
+	 * Client-side constructor; end-user should use newSession() in TacacsReader.
+	 * Only needed for interactive (ASCII) login, 
 	 * which needs to prompt user for info via a UserInterface. 
 	 */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, Tacacs tacacs, UserInterface ui)
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, UserInterface ui, boolean singleConnect)
 	{
 		super(svc, port, rem_addr, priv_lvl, tacacs, null);
 		this.ui = ui;
+		this.singleConnect = singleConnect;
 	}
+
+	/** 
+	 * @return A boolean indicating if the first packet received during this session had the SINGLE_CONNECT flag set 
+	 * @see TACACS+ specification, section 3.3 "Single Connect Mode" 
+	 */
+	@Override boolean isSingleConnectMode() 
+	{
+		return super.isSingleConnectMode() && singleConnect; 
+	}
+
 	
 	/**
 	 * Calls notify() to inform public methods when the final reply packet has been received.
@@ -97,6 +110,7 @@ public class SessionClient extends Session
 	
 	/**
 	 * @return An AuthenReply representing the result of the login attempt
+	 * possibly null if the connection was closed before a response was processed.
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
@@ -104,7 +118,7 @@ public class SessionClient extends Session
 	{
 		tacacs.write(new AuthenStart
 		(
-			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHEN,id), 
+			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHEN,id,singleConnect), 
 			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
 			TAC_PLUS.PRIV_LVL.MIN.code(), 
 			TAC_PLUS.AUTHEN.TYPE.ASCII, 
@@ -115,7 +129,6 @@ public class SessionClient extends Session
 			null // server will prompt for password
 		)); 
 		waitForeverForReply();
-		if (!result.getHeader().hasFlag(TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT)) { tacacs.shutdown(); }
 		return (AuthenReply)result;
 	}
 
@@ -123,7 +136,8 @@ public class SessionClient extends Session
 	/**
 	 * @param username
 	 * @param password
-	 * @return An AuthenReply representing the result of the login attempt
+	 * @return An AuthenReply representing the result of the login attempt;
+	 * possibly null if the connection was closed before a response was processed.
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
@@ -131,7 +145,7 @@ public class SessionClient extends Session
 	{
 		tacacs.write(new AuthenStart
 		(
-			new Header(TAC_PLUS.PACKET.VERSION.v13_1, TAC_PLUS.PACKET.TYPE.AUTHEN,id), 
+			new Header(TAC_PLUS.PACKET.VERSION.v13_1, TAC_PLUS.PACKET.TYPE.AUTHEN,id,singleConnect), 
 			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
 			TAC_PLUS.PRIV_LVL.MIN.code(), 
 			TAC_PLUS.AUTHEN.TYPE.PAP, 
@@ -142,7 +156,6 @@ public class SessionClient extends Session
 			password
 		)); 
 		waitForReply(TIMEOUT_MILLIS);
-		if (!result.getHeader().hasFlag(TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT)) { tacacs.shutdown(); }
 		return (AuthenReply)result;
 	}
 
@@ -154,6 +167,7 @@ public class SessionClient extends Session
 	 * @param authen_svc
 	 * @param args
 	 * @return An AuthorReply representing the result of the authorization attempt
+	 * possibly null if the connection was closed before a response was processed.
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
@@ -161,7 +175,7 @@ public class SessionClient extends Session
 	{
 		tacacs.write(new AuthorRequest
 		(
-			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHOR,id), 
+			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHOR,id,singleConnect), 
 			authen_meth,
 			(byte)0,
 			authen_type,
@@ -172,7 +186,6 @@ public class SessionClient extends Session
 			args
 		)); 
 		waitForReply(TIMEOUT_MILLIS);
-		if (!isSingleConnectMode()) { tacacs.shutdown(); }
 		return (AuthorReply)result;
 	}
 	
@@ -184,6 +197,7 @@ public class SessionClient extends Session
 	 * @param authen_svc
 	 * @param args One of TAC_PLUS.ACCT.FLAG.START, STOP, WATCHDOG, or WATCHDOG+START; if not, an IOException will be thrown before sending to the server.
 	 * @return An AcctReply representing the result of the accounting attempt
+	 * possibly null if the connection was closed before a response was processed.
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
@@ -197,7 +211,7 @@ public class SessionClient extends Session
 		) { throw new IOException("Invalid Accounting flags"); }
 		tacacs.write(new AcctRequest
 		(
-			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHOR,id), 
+			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHOR,id,singleConnect), 
 			flags,
 			authen_meth,
 			TAC_PLUS.PRIV_LVL.USER.code(),
@@ -209,7 +223,6 @@ public class SessionClient extends Session
 			args
 		)); 
 		waitForReply(TIMEOUT_MILLIS);
-		if (!isSingleConnectMode()) { tacacs.shutdown(); }
 		return (AcctReply)result;
 	}
 

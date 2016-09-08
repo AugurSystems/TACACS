@@ -20,7 +20,7 @@ import java.util.concurrent.TimeoutException;
 public abstract class Session
 {
 	static final byte FLAG_ZERO = (byte)0x0;
-	final Tacacs tacacs;
+	final TacacsReader tacacs;
 	
 	/* Common fields for all actions; provided in client's first packet */
 	protected String rem_addr;
@@ -45,7 +45,7 @@ public abstract class Session
 	 * @param tacacs
 	 * @param id A four-byte session ID byte[]; if null, a new ID will be generated (needed for a new client session).
 	 */
-	Session(TAC_PLUS.AUTHEN.SVC authen_svc, String port, String rem_addr, byte priv_lvl, Tacacs tacacs, byte[] id)
+	Session(TAC_PLUS.AUTHEN.SVC authen_svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, byte[] id)
 	{
 		this.tacacs = tacacs;
 		this.rem_addr = rem_addr;
@@ -62,21 +62,29 @@ public abstract class Session
 	}
 	
 	/** 
+	 * Determines if this session supports single connect mode.
+	 * Overridden by SessionClient to implement 'singleConnect' config option, to
+	 * ignore server's ability to reuse socket.
+	 * 
 	 * @return A boolean indicating if the first packet received during this session had the SINGLE_CONNECT flag set 
 	 * @see TACACS+ specification, section 3.3 "Single Connect Mode" 
 	 */
-	boolean isSingleConnectMode() { return firstPacket!=null && firstPacket.header.hasFlag(TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT); }
+	boolean isSingleConnectMode() 
+	{ 
+		return firstPacket!=null && firstPacket.header.hasFlag(TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT); 
+	}
 	
 	
 	protected synchronized void end(Packet result)
 	{
 		this.result = result;
-		if (!isSingleConnectMode()) { tacacs.shutdown(); }
+		if (!isSingleConnectMode()) { tacacs.shutdown(); } // isSingleConnectMode() is overriden by SessionClient
 		notifyAll();
 	}
 
 	synchronized void end(IOException endReason)
 	{
+		result = null;
 		this.ioe = endReason;
 		tacacs.shutdown();
 		if (waitingThread!=null) waitingThread.interrupt();

@@ -53,10 +53,15 @@ public class Header
 		this.bodyLength = -1;
 	}
 	
-	Header(TAC_PLUS.PACKET.VERSION version, TAC_PLUS.PACKET.TYPE type, byte[] sessionID)
+	Header(TAC_PLUS.PACKET.VERSION version, TAC_PLUS.PACKET.TYPE type, byte[] sessionID, boolean singleConnect)
 	{
-		this((byte)1, TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT.code(), version, type, sessionID);
-		//this((byte)1, (byte)(TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT.code() | TAC_PLUS.PACKET.FLAG.UNENCRYPTED.code()), version, type, sessionID);
+		this(
+			(byte)1, 
+			singleConnect? TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT.code() : 0, 
+			version, 
+			type, 
+			sessionID
+		);
 	}
 
 	

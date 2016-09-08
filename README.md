@@ -24,6 +24,27 @@ As noted above, you should start exploring the code from either `ExampleClient`,
 ## Compliance
 This implementation was developed based on the IETF draft document version "draft-ietf-opsawg-tacacs-00" dated December 15, 2015.  Updates in 2016 are mostly for clarification, but also include support for TLS encryption.  TLS has not been addressed in this code, except for adding a related flag in the enumeration of constants.
 
+## Example
+There is an executable that will login via command-line, via PAP.
+
+### Failure
+$ java -jar tacacs.jar 10.0.1.245 trapstation
+
+Username: user1
+
+Password: 
+> "User does not belong to specified group"
+TACACS+: Login success? false
+
+### Success
+$ java -jar tacacs.jar 10.0.1.245 trapstation
+
+Username: user1
+
+Password: 
+TACACS+: Login success? true
+
+TACACS+: Authorization success? true
 
 
 # TACACS+ Wishes

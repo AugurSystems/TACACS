@@ -7,10 +7,10 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
- * This is the base for a TACACS+ client or server, including packet I/O.
- * For usage of this library, see TacacsClient or TacacsServer classes.
+ * This is used by both TACACS+ client and server for reading incoming packet.
  * <p>
  * The TACACS+ Protocol (version 1.78) is defined at 
  * <a href='https://tools.ietf.org/html/draft-grant-tacacs-02'>IETF.org</a>.
@@ -19,7 +19,7 @@ import java.util.List;
  * Copyright 2016 Augur Systems, Inc.  All rights reserved.
  */
 
-public class Tacacs extends Thread
+public class TacacsReader extends Thread
 {
 	public static final int PORT_TACACS = 49;
 	public static final boolean DEBUG = false;
@@ -32,7 +32,7 @@ public class Tacacs extends Thread
 	private final OutputStream out;
 
 	
-	protected Tacacs(Socket socket, String key) throws IOException
+	protected TacacsReader(Socket socket, String key) throws IOException
 	{
 		super("TACACS+");
 		setDaemon(true);
@@ -47,9 +47,15 @@ public class Tacacs extends Thread
 	
 	public void shutdown()
 	{
-		Thread.dumpStack();
-		runnable = false;
-		if (socket!=null) { try { socket.close(); } catch(IOException ioe) { } }
+		if (runnable)
+		{
+			runnable = false;
+			if (socket!=null) 
+			{ 
+				try { socket.close(); } 
+				catch(IOException ioe) { } 
+			}
+		}
 	}
 	
 	/** 
@@ -57,7 +63,10 @@ public class Tacacs extends Thread
 	 * to create new sessions.  (Some servers may not support socket reuse, and so  
 	 * you will need a new TracacsClient for subsequent communications.) 
 	 */
-	public boolean isShutdown() { return runnable && super.isAlive(); }
+	public boolean isShutdown() 
+	{ 
+		return !runnable; 
+	}
 	
 	protected final void addSession(Session s)
 	{
@@ -84,9 +93,8 @@ public class Tacacs extends Thread
 							sessions.remove(s); 
 							if (!s.isSingleConnectMode()) 
 							{
-								runnable = false;
-								try { socket.close(); } catch (IOException io) { }
-								error = new IOException("Other side does not support 'single connect mode'.");
+								error = new IOException("Not in 'single connect mode'.");
+								shutdown();
 							}
 						}
 					}
@@ -96,8 +104,7 @@ public class Tacacs extends Thread
 			catch (IOException e)
 			{
 				error = e;
-				runnable = false;
-				try { socket.close(); } catch (IOException io) { }
+				shutdown();
 			}
 		}
 		if (error==null) { error = new IOException("Shutdown"); }
@@ -136,7 +143,7 @@ public class Tacacs extends Thread
 			}
 			catch(IOException e)
 			{
-				try { socket.close(); } catch (IOException io) { }
+				shutdown();// try { socket.close(); } catch (IOException io) { }
 				throw e;
 			}
 		}

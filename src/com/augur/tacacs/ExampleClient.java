@@ -42,7 +42,7 @@ public class ExampleClient
 	 */
 	public String login(String tacacsHost, String tacacsKey, String username, String password) throws IOException, TimeoutException, AccessControlException, InvalidObjectException
 	{
-		TacacsClient tc = new TacacsClient(tacacsHost, tacacsKey, 10000); // 10 second time-out for contacting TACACS+
+		TacacsClient tc = new TacacsClient(tacacsHost, tacacsKey, 10000, false); // 10 second time-out for contacting TACACS+, and don't attempt single-connect for test simplicity
 		SessionClient authenSession = tc.newSession(TAC_PLUS.AUTHEN.SVC.LOGIN, "console", "localhost", TAC_PLUS.PRIV_LVL.USER.code()); // IO or Timeout exceptions if can't contact TACACS+
 		AuthenReply authentication = authenSession.authenticate_PAP(username, password);
 		if (authentication.isOK()) 

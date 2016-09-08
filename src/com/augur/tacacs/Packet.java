@@ -44,12 +44,12 @@ public abstract class Packet
 
 	/**
 	 * Reads the next reply packet from the server.
-	 * @param tacacs The Tacacs providing I/O and session management
+	 * @param tacacs The TacacsReader providing I/O and session management
 	 * @param key The secret key byte[] shared with the server
 	 * @return A Packet subclass instance: AuthenReply, AcctReply, or AuthorReply
 	 * @throws IOException 
 	 */
-	public static Packet readNext(Tacacs tacacs, byte[] key) throws IOException
+	public static Packet readNext(TacacsReader tacacs, byte[] key) throws IOException
 	{
 		byte[] headerBytes = new byte[12];
 //		System.out.println("Waiting to read a header...");
