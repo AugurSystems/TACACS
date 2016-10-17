@@ -211,7 +211,7 @@ public class SessionClient extends Session
 		) { throw new IOException("Invalid Accounting flags"); }
 		tacacs.write(new AcctRequest
 		(
-			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHOR,id,singleConnect), 
+			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.ACCT,id,singleConnect), 
 			flags,
 			authen_meth,
 			TAC_PLUS.PRIV_LVL.USER.code(),
