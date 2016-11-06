@@ -108,6 +108,8 @@ package com.augur.tacacs;
 			}
 			public static enum TYPE
 			{ 
+				/** First appeared in "draft-ietf-opsawg-tacacs-02.txt" dated 2016-04-12 */
+				NOT_SET(0),
 				ASCII(1),PAP(2),CHAP(3),/**@deprecated*/ARAP(4),MSCHAP(5),MSCHAPV2(6);
 				private final byte code;
 				private TYPE(int code) { this.code=(byte)code; }
