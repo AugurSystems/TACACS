@@ -1,5 +1,7 @@
 # Introduction
-The TACACS+ protocol was developed by Cisco, and is used by network departments for access control.  In general it provides *authentication* (validate a "user" ID), *authorization* (return permissions/roles for the authenticated "user"), and *accounting* (log stuff related to the "user" activity).  Collectively, this is abbreviated as AAA.  For more information, try the Wikipedia page: https://en.wikipedia.org/wiki/TACACS
+This is a Java API for the TACACS+ protocol.  (GitHub did not allow the '+' character in the project name.)  
+
+The original TACACS (no plus) protocol was developed by the U.S. Department of Defense.  It was later enhanced by Cisco, becoming TACACS+.  TACACS is an acronym for Terminal Access Controller Access Control Service.  It is used by network departments for access control to IT network equpment, e.g. routers.  In general it provides *authentication* (validate a "user" ID), *authorization* (return permissions/roles for the authenticated "user"), and *accounting* (log stuff related to the "user" activity).  Collectively, this is abbreviated as AAA.  For more information, try the Wikipedia page: https://en.wikipedia.org/wiki/TACACS
 
 ## Why
 This Java API was developed to integrate our customers' existing TACACS+ servers as the AAA service for our product, [TrapStation](http://www.augur.com/)<sup>TM</sup> &mdash; a fancy SNMP trap forwarder.  Existing open-source Java implementations of TACACS+ clients at the time (2016) were not complete enough for our purposes.  (Although we thank them for their open source, which helped us more-quickly understand the formal specifications.)
