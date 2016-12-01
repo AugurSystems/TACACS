@@ -1,5 +1,5 @@
 # Introduction
-This is a Java API for the TACACS+ protocol.  (GitHub did not allow the '+' character in the project name.)  
+This is a Java API for the TACACS+ protocol.  (GitHub did not allow the '+' character in the project name.)  It is intended for use as a TACACS+ client integrated into your product, but the code includes a skeleton for developing a server too.
 
 The original TACACS (no plus) protocol was developed by the U.S. Department of Defense.  It was later enhanced by Cisco, becoming TACACS+.  TACACS is an acronym for Terminal Access Controller Access Control Service.  It is used by network departments for access control to IT network equpment, e.g. routers.  In general it provides *authentication* (validate a "user" ID), *authorization* (return permissions/roles for the authenticated "user"), and *accounting* (log stuff related to the "user" activity).  Collectively, this is abbreviated as AAA.  For more information, try the Wikipedia page: https://en.wikipedia.org/wiki/TACACS
 
