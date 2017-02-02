@@ -33,18 +33,62 @@ public class TacacsClient extends Object
 	private int[] ports;
 	private final int timeoutMillis;
 	final boolean singleConnect;
+	final boolean unencrypted;
 	/** Note: instance methods are synchronized to protect access to tacacs. */
 	private TacacsReader tacacs;
 
 	/**
-	 * Constructs a new TacacsClient that may be used for multiple calls to newSession().  
-	 * 
-	 * @param host The comma and/or space-separated list of hostnames or 
+	 * Constructs a new TacacsClient that may be used for multiple calls to newSession().
+	 *
+	 * @param host The comma and/or space-separated list of hostnames or
 	 *   IP addresses of TACACS+ servers; optionally with colon-separated port.
 	 * @param key The comma and/or space-separated list of secret keys shared with each TACACS+ server.
 	 * @param timeoutMillis  The socket connection time-out.  Note this should be
 	 *   less than one minute (or whatever AJAX call time-out is used in browsers) to
-	 *   avoid confusing error messaging from browsers when AJAX calls time-out on 
+	 *   avoid confusing error messaging from browsers when AJAX calls time-out on
+	 *   the browser before the socket elegantly times-out in TrapStation code.
+	 * @param singleConnect A boolean indicating if a single socket connection
+	 *   can be reused for multiple sessions, if the server also agrees;
+	 *   it seems this must be set 'false' for Cisco ACS which closes socket
+	 *   despite offering to accept SINGLE_CONNECT mode.
+	 * @param unencrypted A boolean indicating if the payload should remain unencrypted
+	 *   during transmission.
+	 */
+	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect, boolean unencrypted)
+	{
+		this.timeoutMillis = timeoutMillis;
+		this.keys = key.split("[,\\s]+");
+		this.hosts = host.split("[,\\s]+");
+		this.ports = new int[hosts.length];
+		this.singleConnect = singleConnect;
+		this.unencrypted = unencrypted;
+		for (int i=hosts.length-1; i>=0; i--)
+		{
+			int j = hosts[i].indexOf(':');
+			if (j>=0)
+			{
+				String p = (j<(hosts[i].length()-2)) ? hosts[i].substring(j+1) : Integer.toString(TacacsReader.PORT_TACACS);
+				try { ports[i] = Integer.parseInt(p); }
+				catch (NumberFormatException nfe)
+				{
+					ports[i] = TacacsReader.PORT_TACACS;
+					System.out.println("TACACS+: Bad port assigned for host, \""+hosts[i]+"\".  Using default port "+TacacsReader.PORT_TACACS+" instead.");
+				}
+				hosts[i]=hosts[i].substring(0,j);
+			}
+			else { ports[i] = TacacsReader.PORT_TACACS; }
+		}
+
+	}
+	/**
+	 * Constructs a new TacacsClient that may be used for multiple calls to newSession().
+	 *
+	 * @param host The comma and/or space-separated list of hostnames or
+	 *   IP addresses of TACACS+ servers; optionally with colon-separated port.
+	 * @param key The comma and/or space-separated list of secret keys shared with each TACACS+ server.
+	 * @param timeoutMillis  The socket connection time-out.  Note this should be
+	 *   less than one minute (or whatever AJAX call time-out is used in browsers) to
+	 *   avoid confusing error messaging from browsers when AJAX calls time-out on
 	 *   the browser before the socket elegantly times-out in TrapStation code.
 	 * @param singleConnect A boolean indicating if a single socket connection
 	 *   can be reused for multiple sessions, if the server also agrees;
@@ -53,27 +97,7 @@ public class TacacsClient extends Object
 	 */
 	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect)
 	{
-		this.timeoutMillis = timeoutMillis;
-		this.keys = key.split("[,\\s]+");
-		this.hosts = host.split("[,\\s]+");
-		this.ports = new int[hosts.length];
-		this.singleConnect = singleConnect;
-		for (int i=hosts.length-1; i>=0; i--)
-		{
-			int j = hosts[i].indexOf(':');
-			if (j>=0)
-			{
-				String p = (j<(hosts[i].length()-2)) ? hosts[i].substring(j+1) : Integer.toString(TacacsReader.PORT_TACACS);
-				try { ports[i] = Integer.parseInt(p); } 
-				catch (NumberFormatException nfe) 
-				{ 
-					ports[i] = TacacsReader.PORT_TACACS; 
-					System.out.println("TACACS+: Bad port assigned for host, \""+hosts[i]+"\".  Using default port "+TacacsReader.PORT_TACACS+" instead.");
-				}
-				hosts[i]=hosts[i].substring(0,j);
-			}
-			else { ports[i] = TacacsReader.PORT_TACACS; }
-		}
+		this(host, key, timeoutMillis, singleConnect, false);
 	}
 
 	/**
@@ -111,7 +135,7 @@ public class TacacsClient extends Object
 	public synchronized SessionClient newSession(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl) throws IOException
 	{
 		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
-		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, singleConnect);
+		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, singleConnect, unencrypted);
 		t.addSession(s);
 		return s;
 	}
@@ -125,7 +149,7 @@ public class TacacsClient extends Object
 	public synchronized SessionClient newSessionInteractive(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, UserInterface ui) throws IOException
 	{
 		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
-		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, ui, singleConnect);
+		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, ui, singleConnect, unencrypted);
 		t.addSession(s);
 		return s;
 	}
