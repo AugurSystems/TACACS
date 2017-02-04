@@ -1,3 +1,5 @@
 /nbproject/
 /build/classes/
 /dist/
+.idea/
+*.iml

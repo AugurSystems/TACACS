@@ -12,11 +12,12 @@ public class SessionClient extends Session
 	private static final boolean DEBUG = false;
 	private final UserInterface ui;
 	private final boolean singleConnect;
-	
+	private byte headerFlags;
+
 	/** Client-side constructor; end-user should use newSession() in TacacsReader. */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect)
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect, boolean unencrypted)
 	{
-		this(svc, port, rem_addr, priv_lvl, tacacs, null, singleConnect);
+		this(svc, port, rem_addr, priv_lvl, tacacs, null, singleConnect, unencrypted);
 	}
 	
 	/** 
@@ -24,11 +25,18 @@ public class SessionClient extends Session
 	 * Only needed for interactive (ASCII) login, 
 	 * which needs to prompt user for info via a UserInterface. 
 	 */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, UserInterface ui, boolean singleConnect)
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, UserInterface ui, boolean singleConnect, boolean unencrypted)
 	{
 		super(svc, port, rem_addr, priv_lvl, tacacs, null);
 		this.ui = ui;
 		this.singleConnect = singleConnect;
+		this.headerFlags = FLAG_ZERO;
+		if (singleConnect) {
+			this.headerFlags |= TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT.code();
+		}
+		if (unencrypted){
+			this.headerFlags |= TAC_PLUS.PACKET.FLAG.UNENCRYPTED.code();
+		}
 	}
 
 	/** 
@@ -40,7 +48,6 @@ public class SessionClient extends Session
 		return super.isSingleConnectMode() && singleConnect; 
 	}
 
-	
 	/**
 	 * Calls notify() to inform public methods when the final reply packet has been received.
 	 * @param p
@@ -118,7 +125,7 @@ public class SessionClient extends Session
 	{
 		tacacs.write(new AuthenStart
 		(
-			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHEN,id,singleConnect), 
+			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
 			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
 			TAC_PLUS.PRIV_LVL.MIN.code(), 
 			TAC_PLUS.AUTHEN.TYPE.ASCII, 
@@ -145,7 +152,7 @@ public class SessionClient extends Session
 	{
 		tacacs.write(new AuthenStart
 		(
-			new Header(TAC_PLUS.PACKET.VERSION.v13_1, TAC_PLUS.PACKET.TYPE.AUTHEN,id,singleConnect), 
+			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_1, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
 			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
 			TAC_PLUS.PRIV_LVL.MIN.code(), 
 			TAC_PLUS.AUTHEN.TYPE.PAP, 
@@ -175,7 +182,7 @@ public class SessionClient extends Session
 	{
 		tacacs.write(new AuthorRequest
 		(
-			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHOR,id,singleConnect), 
+			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHOR,id),
 			authen_meth,
 			(byte)0,
 			authen_type,
@@ -208,10 +215,10 @@ public class SessionClient extends Session
 			flags!=TAC_PLUS.ACCT.FLAG.STOP.code() &&
 			flags!=TAC_PLUS.ACCT.FLAG.WATCHDOG.code() &&
 			flags!=(TAC_PLUS.ACCT.FLAG.WATCHDOG.code()+TAC_PLUS.ACCT.FLAG.START.code())
-		) { throw new IOException("Invalid Accounting flags"); }
+		) { throw new IOException("Invalid Accounting headerFlags"); }
 		tacacs.write(new AcctRequest
 		(
-			new Header(TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.ACCT,id,singleConnect), 
+			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.ACCT,id),
 			flags,
 			authen_meth,
 			TAC_PLUS.PRIV_LVL.USER.code(),

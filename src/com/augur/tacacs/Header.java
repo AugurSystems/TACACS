@@ -43,8 +43,7 @@ public class Header
 	}
 	
 	
-	private Header(byte seqNum, byte flags, TAC_PLUS.PACKET.VERSION version, TAC_PLUS.PACKET.TYPE type, byte[] sessionID)
-	{
+	private Header(byte seqNum, byte flags, TAC_PLUS.PACKET.VERSION version, TAC_PLUS.PACKET.TYPE type, byte[] sessionID) {
 		this.seqNum = seqNum;
 		this.flags = flags;
 		this.version = version;
@@ -52,14 +51,13 @@ public class Header
 		this.sessionID = sessionID;
 		this.bodyLength = -1;
 	}
-	
-	Header(TAC_PLUS.PACKET.VERSION version, TAC_PLUS.PACKET.TYPE type, byte[] sessionID, boolean singleConnect)
-	{
+
+	Header(byte flags, TAC_PLUS.PACKET.VERSION version, TAC_PLUS.PACKET.TYPE type, byte[] sessionID) {
 		this(
-			(byte)1, 
-			singleConnect? TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT.code() : 0, 
-			version, 
-			type, 
+			(byte)1,
+			flags,
+			version,
+			type,
 			sessionID
 		);
 	}
