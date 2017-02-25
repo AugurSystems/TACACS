@@ -4,6 +4,8 @@ import java.net.Socket;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -64,19 +66,26 @@ public class TacacsClient extends Object
 		this.unencrypted = unencrypted;
 		for (int i=hosts.length-1; i>=0; i--)
 		{
-			int j = hosts[i].indexOf(':');
-			if (j>=0)
-			{
-				String p = (j<(hosts[i].length()-2)) ? hosts[i].substring(j+1) : Integer.toString(TacacsReader.PORT_TACACS);
-				try { ports[i] = Integer.parseInt(p); }
-				catch (NumberFormatException nfe)
-				{
-					ports[i] = TacacsReader.PORT_TACACS;
-					System.out.println("TACACS+: Bad port assigned for host, \""+hosts[i]+"\".  Using default port "+TacacsReader.PORT_TACACS+" instead.");
+			try {
+				//Making use of Java URI implementation to split host address to hostname and port.
+				//This would inherently take care of both IPv4 and IPv6.
+				URI uri = new URI("http://" + this.hosts[i]);
+				String hostname = uri.getHost();
+				int port = uri.getPort();
+				if(null != hostname){
+					this.hosts[i] = hostname;
 				}
-				hosts[i]=hosts[i].substring(0,j);
+				this.ports[i] = port;
+				if(this.ports[i] == -1) {
+					System.out.println("TACACS+: No port assigned for host, \""+hosts[i]+"\".  " +
+							"Using default port "+TacacsReader.PORT_TACACS+" instead.");
+					ports[i] = TacacsReader.PORT_TACACS;
+				}
+			} catch (URISyntaxException e) {
+				System.out.println("TACACS+: Bad port assigned for host, \""+hosts[i]+"\".  " +
+						"Using default port "+TacacsReader.PORT_TACACS+" instead.");
+				ports[i] = TacacsReader.PORT_TACACS;
 			}
-			else { ports[i] = TacacsReader.PORT_TACACS; }
 		}
 
 	}
