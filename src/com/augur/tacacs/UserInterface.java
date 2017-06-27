@@ -31,10 +31,13 @@ public abstract class UserInterface
 	 * Creates an instance that that will return the given username and password 
 	 * when prompted; useful for simulating a PAP-like response to an interactive (ASCII) interface.
 	 */
-	public static final UserInterface getPAPInstance(final String username, final String password)
+	public static final UserInterface getPAPInstance(final String usernameLocal, final String password)
 	{
 		return new UserInterface()
 		{
+			{
+				this.username = usernameLocal;
+			}
 			@Override public String getUserInput(String prompt, boolean noEcho, TAC_PLUS.AUTHEN.STATUS getWhat)
 			{
 				switch(getWhat)
