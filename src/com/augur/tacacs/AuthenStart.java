@@ -18,7 +18,8 @@ public class AuthenStart extends Packet
 	final String username;
 	final String port;
 	final String rem_addr;
-	final String data;
+	final String dataString;
+	final byte[] dataBytes;
 	
 	/**
 	 * Constructor for when reading incoming packets.
@@ -43,14 +44,31 @@ public class AuthenStart extends Packet
 		offset += body[5];
 		rem_addr = (body[6]>0) ? new String(body, offset, body[6], StandardCharsets.UTF_8) : null; 
 		offset += body[6];
-		data = (body[7]>0) ? new String(body, offset, body[7], StandardCharsets.UTF_8) : null; 
+		if (body[7]>0) 
+		{ 
+			if(offset+body[7] == body.length)
+			{
+				dataBytes = new byte[body[7]];
+				System.arraycopy(body, offset, dataBytes, 0, dataBytes.length); 
+				dataString = new String(dataBytes, StandardCharsets.UTF_8); 
+			}
+			else 
+			{ 
+				throw new IOException("Length of 'data' field (defined in 8th byte) does not match remaining number of packet's bytes.");
+			}
+		}
+		else 
+		{ 
+			dataBytes = null; 
+			dataString = null; 
+		}
 	}
 
 	
 	/**
-	 * Constructor for when building outgoing packets.
+	 * Constructor for when building outgoing packets, with a String data field.
 	 */
-	AuthenStart(Header header, TAC_PLUS.AUTHEN.ACTION action, byte priv_lvl, TAC_PLUS.AUTHEN.TYPE type, TAC_PLUS.AUTHEN.SVC service, String username, String port, String rem_addr, String data)
+	AuthenStart(Header header, TAC_PLUS.AUTHEN.ACTION action, byte priv_lvl, TAC_PLUS.AUTHEN.TYPE type, TAC_PLUS.AUTHEN.SVC service, String username, String port, String rem_addr, String dataString)
 	{
 		super(header);
 		this.action = action;
@@ -60,13 +78,32 @@ public class AuthenStart extends Packet
 		this.username = username;
 		this.port = port;
 		this.rem_addr = rem_addr;
-		this.data = data;
+		this.dataString = dataString;
+		this.dataBytes = dataString == null ? null : dataString.getBytes(StandardCharsets.UTF_8);
+	}
+
+	
+	/**
+	 * Constructor for when building outgoing packets, with binary data.
+	 */
+	AuthenStart(Header header, TAC_PLUS.AUTHEN.ACTION action, byte priv_lvl, TAC_PLUS.AUTHEN.TYPE type, TAC_PLUS.AUTHEN.SVC service, String username, String port, String rem_addr, byte[] dataBytes)
+	{
+		super(header);
+		this.action = action;
+		this.priv_lvl = priv_lvl;
+		this.type = type;
+		this.authen_service = service;
+		this.username = username;
+		this.port = port;
+		this.rem_addr = rem_addr;
+		this.dataBytes = dataBytes;
+		this.dataString = dataBytes == null ? null : new String(dataBytes, StandardCharsets.UTF_8); ;
 	}
 
 
 	@Override public String toString()
 	{
-		return getClass().getSimpleName()+":"+header+"[action:"+action+" priv_lvl:'"+priv_lvl+"' type:'"+type+"' service:'"+authen_service+"' username:'"+username+"' port:'"+port+"' rem_addr:'"+rem_addr+"' data:'"+data+"']";
+		return getClass().getSimpleName()+":"+header+"[action:"+action+" priv_lvl:'"+priv_lvl+"' type:'"+type+"' service:'"+authen_service+"' username:'"+username+"' port:'"+port+"' rem_addr:'"+rem_addr+"' data:'"+dataString+"']";
 	}
 	
 
@@ -79,7 +116,6 @@ public class AuthenStart extends Packet
 	@Override void write(OutputStream out, byte[] key) throws IOException
 	{
 		byte[] userBytes = username==null?null:username.getBytes(StandardCharsets.UTF_8);
-		byte[] dataBytes = data==null?null:data.getBytes(StandardCharsets.UTF_8);
 		byte[] portBytes = port==null?null:port.getBytes(StandardCharsets.UTF_8);
 		byte[] remoBytes = rem_addr==null?null:rem_addr.getBytes(StandardCharsets.UTF_8);
 		ByteArrayOutputStream body = new ByteArrayOutputStream();
@@ -97,5 +133,7 @@ public class AuthenStart extends Packet
 		if (dataBytes!=null) { body.write(dataBytes); }
 		header.writePacket(out, body.toByteArray(), key);
 	}
+	
+	
 	
 }

@@ -151,8 +151,8 @@ public class TacacsClient extends Object
 	/**
 	 * This is the same as the other newSessionInteractive(), except it includes a
 	 * UserInterface parameter.  This is only needed for interactive authentications,
- i.e. authentication type = TAC_PLUS.AUTHEN.TYPE.ASCII.  
- Synchronized to protect creation/shutdown of TacacsReader.
+	 * i.e. authentication type = TAC_PLUS.AUTHEN.TYPE.ASCII.  
+	 * Synchronized to protect creation/shutdown of TacacsReader.
 	 */
 	public synchronized SessionClient newSessionInteractive(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, UserInterface ui) throws IOException
 	{

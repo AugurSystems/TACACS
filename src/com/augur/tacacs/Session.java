@@ -52,7 +52,7 @@ public abstract class Session
 		this.port = port;
 		this.priv_lvl = priv_lvl;
 		this.authen_svc = authen_svc;
-		this.id = id==null? generateSessionID() : id;
+		this.id = id==null? generateRandomBytes(4): id;
 	}
 	
 	
@@ -130,14 +130,16 @@ public abstract class Session
 	}
 	
 	
-	/** Only used to generate a session ID for a new client-side session. */
-	private static byte[] generateSessionID()
+	/** Generate a random byte[], e.g. a session ID for a new client-side session, or a CHAP challenge. */
+	final static byte[] generateRandomBytes(int length)
 	{
 		// Use of SecureRandom per https://www.cigital.com/blog/proper-use-of-javas-securerandom/ 
 		SecureRandom sr;
 		try { sr = SecureRandom.getInstance("SHA1PRNG", "SUN"); }
 		catch (NoSuchAlgorithmException | NoSuchProviderException e) { sr = new SecureRandom(); } 
-		return Packet.toBytes4(sr.nextInt());
+		byte[] bytes = new byte[length];
+		sr.nextBytes(bytes);
+		return bytes;
 	}
 
 	
