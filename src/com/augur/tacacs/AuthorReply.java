@@ -49,7 +49,7 @@ public class AuthorReply extends Packet
 		int dataLen = toInt(body[4],body[5]);
 		int arg_cnt = body[1] & FF;
 		int chkLen = overhead + arg_cnt + msgLen + dataLen;
-		for (int i=0; i<arg_cnt; i++) { chkLen += body[overhead+i]; }
+		for (int i=0; i<arg_cnt; i++) { chkLen += body[overhead+i] & FF; }
 		if (chkLen != body.length) { throw new IOException("Corrupt packet or bad key"); }
 		//
 		status = TAC_PLUS.AUTHOR.STATUS.forCode(body[0]);
@@ -57,7 +57,7 @@ public class AuthorReply extends Packet
 		int argOffset = 6 + arg_cnt + msgLen + dataLen;
 		for (int i=0; i<arg_cnt; i++)
 		{
-			int argLen = body[6+i];
+			int argLen = body[6+i] & FF ;
 			arguments[i] = new Argument(new String(Arrays.copyOfRange(body, argOffset, argOffset+argLen),StandardCharsets.UTF_8));
 			argOffset += argLen;
 		}
