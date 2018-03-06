@@ -133,7 +133,7 @@ public class SessionClient extends Session
 		(
 			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
 			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
-			TAC_PLUS.PRIV_LVL.MIN.code(), 
+			priv_lvl,
 			TAC_PLUS.AUTHEN.TYPE.ASCII, 
 			TAC_PLUS.AUTHEN.SVC.NONE, 
 			null, // server will prompts for username
@@ -163,7 +163,7 @@ public class SessionClient extends Session
 		(
 			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_1, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
 			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
-			TAC_PLUS.PRIV_LVL.MIN.code(), 
+			priv_lvl,
 			TAC_PLUS.AUTHEN.TYPE.PAP, 
 			TAC_PLUS.AUTHEN.SVC.NONE, 
 			username, 
@@ -210,7 +210,7 @@ public class SessionClient extends Session
 		(
 			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_1, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
 			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
-			TAC_PLUS.PRIV_LVL.MIN.code(), 
+			priv_lvl,
 			TAC_PLUS.AUTHEN.TYPE.CHAP, 
 			TAC_PLUS.AUTHEN.SVC.NONE, 
 			username, 
