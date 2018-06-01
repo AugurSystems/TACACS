@@ -3,3 +3,4 @@
 /users/
 .idea/
 *.iml
+/nbproject/private/
