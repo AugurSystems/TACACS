@@ -56,8 +56,7 @@ public abstract class Session
 	}
 	
 	
-	void handlePacket(Packet p) throws IOException
-	{
+	void handlePacket(Packet p) throws IOException {
 		if (firstPacket==null) firstPacket = p;
 	}
 	

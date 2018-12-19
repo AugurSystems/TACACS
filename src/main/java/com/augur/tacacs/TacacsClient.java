@@ -1,5 +1,7 @@
 package com.augur.tacacs;
 
+
+
 import java.net.Socket;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -74,14 +76,14 @@ public class TacacsClient extends Object
 				ports[i] = uri.getPort();
 				if(ports[i] == -1) 
 				{
-					System.out.println("TACACS+: No port assigned for host, \""+hosts[i]+"\".  " +
+					Logging.logger().fine("TACACS+: No port assigned for host, \""+hosts[i]+"\".  " +
 						"Using default port "+TacacsReader.PORT_TACACS+" instead.");
 					ports[i] = TacacsReader.PORT_TACACS;
 				}
 			} 
 			catch (URISyntaxException e) 
 			{
-				System.out.println("TACACS+: Bad port assigned for host, \""+hosts[i]+"\".  " +
+				Logging.logger().fine("TACACS+: Bad port assigned for host, \""+hosts[i]+"\".  " +
 					"Using default port "+TacacsReader.PORT_TACACS+" instead.");
 				ports[i] = TacacsReader.PORT_TACACS;
 			}
@@ -140,8 +142,7 @@ public class TacacsClient extends Object
 	 * @throws SocketTimeoutException (a subclass of IOException!) if the connection isn't made before the timeout.
 	 * @throws java.io.IOException if there is any problem, other than SocketTimeoutException.
 	 */
-	public synchronized SessionClient newSession(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl) throws IOException
-	{
+	public synchronized SessionClient newSession(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl) {
 		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
 		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, singleConnect, unencrypted);
 		t.addSession(s);
@@ -154,8 +155,7 @@ public class TacacsClient extends Object
 	 * i.e. authentication type = TAC_PLUS.AUTHEN.TYPE.ASCII.  
 	 * Synchronized to protect creation/shutdown of TacacsReader.
 	 */
-	public synchronized SessionClient newSessionInteractive(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, UserInterface ui) throws IOException
-	{
+	public synchronized SessionClient newSessionInteractive(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, UserInterface ui) {
 		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
 		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, ui, singleConnect, unencrypted);
 		t.addSession(s);
@@ -178,8 +178,7 @@ public class TacacsClient extends Object
 	/**
 	 * Synchronized to protect creation/shutdown of TacacsReader.
 	 */
-	private synchronized TacacsReader getTacacs() throws IOException
-	{
+	private synchronized TacacsReader getTacacs() throws TacacsException {
 		if (tacacs==null || tacacs.isShutdown())
 		{
 			tacacs = null;
@@ -194,17 +193,17 @@ public class TacacsClient extends Object
 					String key = (i<keys.length) ? keys[i] : keys[keys.length-1]; // reuse last only if not enough
 					tacacs = new TacacsReader(sock, key);
 					tacacs.start();
-					System.out.println("TACACS+: Connected to server at "+hosts[i]+":"+ports[i]);
+					Logging.logger().fine("TACACS+: Connected to server at "+hosts[i]+":"+ports[i]);
 					return tacacs;
 				}
 				catch(IOException ioe) 
 				{ 
 					if (sock!=null) { try { sock.close(); } catch (IOException ioe2) { } }
 					tacacs = null;
-					System.out.println("TACACS+: Unable to contact TACACS+ server @ "+hosts[i]+" ("+ioe+")"); 
+					Logging.logger().severe("TACACS+: Unable to contact TACACS+ server @ "+hosts[i]+" ("+ioe+")");
 				}
 			}
-			if (tacacs == null) { throw new IOException("Unable to contact any TACACS+ server(s)."); }
+			if (tacacs == null) { throw new TacacsException("Unable to contact any TACACS+ server(s)."); }
 		}
 		return tacacs;
 	}

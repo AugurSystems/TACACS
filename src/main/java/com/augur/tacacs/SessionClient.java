@@ -1,4 +1,6 @@
 package com.augur.tacacs;
+
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -14,11 +16,14 @@ public class SessionClient extends Session
 {
 	private static final int TIMEOUT_MILLIS = 5000; // TODO: don't hard-code
 	private static final boolean DEBUG = false;
-	private final UserInterface ui;
+	private UserInterface ui;
 	private final boolean singleConnect;
 	private byte headerFlags;
 	private static final AtomicInteger PPP_ID = new AtomicInteger(); // for CHAP
 	private static final int CHAP_CHALLENGE_LENGTH = 16;
+
+	private String user;
+	private String password;
 
 	/** Client-side constructor; end-user should use newSession() in TacacsReader. */
 	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect, boolean unencrypted)
@@ -59,8 +64,7 @@ public class SessionClient extends Session
 	 * @param p
 	 * @throws IOException 
 	 */
-	@Override synchronized void handlePacket(Packet p) throws IOException
-	{
+	@Override synchronized void handlePacket(Packet p) throws IOException {
 		super.handlePacket(p); // stores firstPacket, for isSingleConnectMode()
 		if (DEBUG) { System.out.println("Received <-- "+p); }
 		switch(p.header.type)
@@ -73,7 +77,7 @@ public class SessionClient extends Session
 						end(p);
 						break;
 					case GETDATA: // generic authen questions, e.g. favorite teacher?  Only used during ASCII (interactive) AUTHEN LOGIN
-						if (ui==null) { throw new IOException("No interactive user interface available."); } // shouldn't happen
+						if (ui==null) { throw new TacacsException("No interactive user interface available."); } // shouldn't happen
 						String data = ui.getUserInput(authenReply.server_msg, authenReply.hasFlag(TAC_PLUS.REPLY.FLAG.NOECHO), authenReply.status); // blocks for user input
 						tacacs.write(new AuthenContinue
 						(
@@ -83,7 +87,7 @@ public class SessionClient extends Session
 						));
 						break;
 					case GETUSER: // only used during ASCII (interactive) AUTHEN LOGIN
-						if (ui==null) { throw new IOException("No interactive user interface available."); }
+						if (ui==null) { throw new TacacsException("No interactive user interface available."); }
 						String username = ui.getUserInput(authenReply.server_msg, authenReply.hasFlag(TAC_PLUS.REPLY.FLAG.NOECHO), authenReply.status); // blocks for user input
 						tacacs.write(new AuthenContinue
 						(
@@ -93,7 +97,7 @@ public class SessionClient extends Session
 						));
 						break;
 					case GETPASS:
-						if (ui==null) { throw new IOException("No interactive user interface available."); }
+						if (ui==null) { throw new TacacsException("No interactive user interface available."); }
 						String password = ui.getUserInput(authenReply.server_msg, authenReply.hasFlag(TAC_PLUS.REPLY.FLAG.NOECHO), authenReply.status); // blocks for user input
 						tacacs.write(new AuthenContinue
 						(
@@ -145,7 +149,68 @@ public class SessionClient extends Session
 		return (AuthenReply)result;
 	}
 
-	
+
+	/**
+	 * @return An AuthenReply representing the result of the login attempt
+	 * possibly null if the connection was closed before a response was processed.
+	 * We can speed things up by sending the username as part of our intial request.
+	 * @throws java.util.concurrent.TimeoutException
+	 * @throws java.io.IOException
+	 */
+	public synchronized AuthenReply authenticate_ASCII(String username) throws TimeoutException, IOException
+	{
+		tacacs.write(new AuthenStart
+				(
+						new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
+						TAC_PLUS.AUTHEN.ACTION.LOGIN,
+						priv_lvl,
+						TAC_PLUS.AUTHEN.TYPE.ASCII,
+						TAC_PLUS.AUTHEN.SVC.NONE,
+						username, // server will prompts for username
+						port,
+						rem_addr,
+						(String) null// server will prompt for password
+				));
+		waitForeverForReply();
+		return (AuthenReply)result;
+	}
+
+	/**
+	 * @return An AuthenReply representing the result of the login attempt
+	 * possibly null if the connection was closed before a response was processed.
+	 * We can speed things up by sending the username as part of our intial request.
+	 * @throws java.util.concurrent.TimeoutException
+	 * @throws java.io.IOException
+	 */
+	public synchronized AuthenReply authenticate_ASCII(String username, String password) throws TimeoutException, IOException
+	{
+		//Save current UI
+		UserInterface currentUi = ui;
+
+		ui = new UserInterface() {
+			@Override
+			public String getUserInput(String prompt, boolean noEcho, TAC_PLUS.AUTHEN.STATUS getWhat) {
+				switch (getWhat) {
+					case GETPASS:
+						return password;
+					case GETUSER:
+						//Not actually needed. But we make it available anyway-
+						return username;
+					default:
+							return "";
+				}
+
+			}
+		};
+		AuthenReply authenReply = authenticate_ASCII(username);
+		//Reset existing UI
+		ui = currentUi;
+
+		return authenReply;
+
+	}
+
+
 	/**
 	 * Authenticates the client using PAP.
 	 * @see The TACACS+ Protocol IETF draft, currently at https://www.ietf.org/id/draft-ietf-opsawg-tacacs-06.txt
