@@ -23,7 +23,7 @@ public class AuthenContinue extends Packet
 	{
 		super(header);
 		// Verify 
-		int overhead = 3;
+		int overhead = 5;
 		if (body.length<overhead) { throw new IOException("Corrupt packet or bad key"); }
 		int chkLen = overhead+body[0]+body[1];
 		if (chkLen != body.length) { throw new IOException("Corrupt packet or bad key"); }
