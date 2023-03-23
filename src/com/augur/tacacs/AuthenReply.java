@@ -31,7 +31,7 @@ public class AuthenReply extends Packet
 	{
 		super(header);
 		// Verify...
-		int overhead = 6;
+		final int overhead = 6;
 		if (body.length<overhead) { throw new IOException("Corrupt packet or bad key"); }
 		int msgLen = toInt(body[2],body[3]);
 		int dataLen = toInt(body[4],body[5]);
@@ -41,8 +41,8 @@ public class AuthenReply extends Packet
 		status = TAC_PLUS.AUTHEN.STATUS.forCode(body[0]);
 		if (status == null) { throw new IOException("Received unknown TAC_PLUS_AUTHEN_STATUS code: "+body[0]); }
 		flags = body[1];
-		server_msg = (msgLen>0) ? new String(body, 6, msgLen, StandardCharsets.UTF_8) : null; 
-		data = (dataLen>0) ? new String(body, 6+msgLen, dataLen, StandardCharsets.UTF_8) : null; 
+		server_msg = (msgLen>0) ? new String(body, overhead, msgLen, StandardCharsets.UTF_8) : null; 
+		data = (dataLen>0) ? new String(body, overhead+msgLen, dataLen, StandardCharsets.UTF_8) : null; 
 	}
 
 	
