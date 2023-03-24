@@ -46,7 +46,7 @@ public class AuthorRequest extends Packet
 	{
 		super(header);
 		// Verify...
-		int overhead = 8;
+		final int overhead = 8;
 		if (body.length<overhead) { throw new IOException("Corrupt packet or bad key"); }
 		int chkLen = overhead + body[4] + body[5] + body[6] + body[7];
 		if (chkLen != body.length) { throw new IOException("Corrupt packet or bad key"); }
@@ -56,16 +56,16 @@ public class AuthorRequest extends Packet
 		authen_type = TAC_PLUS.AUTHEN.TYPE.forCode(body[2]);
 		authen_service = TAC_PLUS.AUTHEN.SVC.forCode(body[3]);
 		int arg_cnt = body[7];
-		int i, offset = 8 + arg_cnt;
+		int i, offset = overhead + arg_cnt;
 		i=body[4];     user = (i>0) ? new String(body, offset, i, StandardCharsets.UTF_8) : null; offset+=i;
 		i=body[5];     port = (i>0) ? new String(body, offset, i, StandardCharsets.UTF_8) : null; offset+=i;
 		i=body[6]; rem_addr = (i>0) ? new String(body, offset, i, StandardCharsets.UTF_8) : null; offset+=i;
 		arguments = new Argument[arg_cnt];
 		for (int a=0; a<arg_cnt; a++) 
 		{ 
-			String arg = new String(body, offset, body[8+a], StandardCharsets.UTF_8);
+			String arg = new String(body, offset, body[overhead+a], StandardCharsets.UTF_8);
 			arguments[a] = new Argument(arg); 
-			offset+=body[8+a]; 
+			offset+=body[overhead+a]; 
 		}
 	}
 

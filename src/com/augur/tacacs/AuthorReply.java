@@ -43,7 +43,7 @@ public class AuthorReply extends Packet
 	{
 		super(header);
 			// Verify...
-		int overhead = 6;
+		final int overhead = 6;
 		if (body.length<overhead) { throw new IOException("Corrupt packet or bad key"); }
 		int msgLen = toInt(body[2],body[3]);
 		int dataLen = toInt(body[4],body[5]);
@@ -54,16 +54,16 @@ public class AuthorReply extends Packet
 		//
 		status = TAC_PLUS.AUTHOR.STATUS.forCode(body[0]);
 		arguments = new Argument[arg_cnt];
-		int argOffset = 6 + arg_cnt + msgLen + dataLen;
+		int argOffset = overhead + arg_cnt + msgLen + dataLen;
 		for (int i=0; i<arg_cnt; i++)
 		{
-			int argLen = body[6+i] & FF ;
+			int argLen = body[overhead+i] & FF ;
 			arguments[i] = new Argument(new String(Arrays.copyOfRange(body, argOffset, argOffset+argLen),StandardCharsets.UTF_8));
 			argOffset += argLen;
 		}
 		if (status == null) { throw new IOException("Received unknown TAC_PLUS_AUTHOR_STATUS code: "+body[0]); }
-		server_msg = (msgLen>0) ? new String(body, 6, msgLen, StandardCharsets.UTF_8) : null; 
-		data = (dataLen>0) ? new String(body, 6+msgLen, dataLen, StandardCharsets.UTF_8) : null; 
+		server_msg = (msgLen>0) ? new String(body, overhead, msgLen, StandardCharsets.UTF_8) : null; 
+		data = (dataLen>0) ? new String(body, overhead+msgLen, dataLen, StandardCharsets.UTF_8) : null; 
 	}
 
 	

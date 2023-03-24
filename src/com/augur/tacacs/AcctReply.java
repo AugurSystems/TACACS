@@ -27,7 +27,7 @@ public class AcctReply extends Packet
 		if (chkLen != body.length) { throw new IOException("Corrupt packet or bad key"); }
 		//
 		server_msg = (msgLen>0) ? new String(body, overhead, msgLen, StandardCharsets.UTF_8) : null; 
-		data = (dataLen>0) ? new String(body, 5+msgLen, dataLen, StandardCharsets.UTF_8) : null; 
+		data = (dataLen>0) ? new String(body, overhead+msgLen, dataLen, StandardCharsets.UTF_8) : null; 
 		status = TAC_PLUS.ACCT.STATUS.forCode(body[4]);
 		if (status == null) { throw new IOException("Received unknown TAC_PLUS_ACCT_STATUS code: "+body[0]); }
 	}

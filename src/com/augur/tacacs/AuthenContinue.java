@@ -23,16 +23,16 @@ public class AuthenContinue extends Packet
 	{
 		super(header);
 		// Verify 
-		int overhead = 5;
+		final int overhead = 5;
 		if (body.length<overhead) { throw new IOException("Corrupt packet or bad key"); }
 		int chkLen = overhead+body[0]+body[1];
 		if (chkLen != body.length) { throw new IOException("Corrupt packet or bad key"); }
 		//
 		flags = body[4];
 		int ulen = toInt(body[0],body[1]);
-		user_msg = (ulen>0) ? new String(body, 5, ulen, StandardCharsets.UTF_8) : null; 
+		user_msg = (ulen>0) ? new String(body, overhead, ulen, StandardCharsets.UTF_8) : null; 
 		int dlen = toInt(body[2],body[3]);
-		data = (dlen>0) ? new String(body, 5+ulen, dlen, StandardCharsets.UTF_8) : null; 
+		data = (dlen>0) ? new String(body, overhead+ulen, dlen, StandardCharsets.UTF_8) : null; 
 	}
 
 	
