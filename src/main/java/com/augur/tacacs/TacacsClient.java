@@ -10,22 +10,24 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.log4j.Logger;
+
 /**
- * This is a TACACS+ client, implementing methods for authentication, 
- * authorization, and accounting.  For usage in your app, see the static 
+ * This is a TACACS+ client, implementing methods for authentication,
+ * authorization, and accounting.  For usage in your app, see the static
  * example methods at the end of the source code.
  * <p>
- * The TACACS+ Protocol (version 1.78) is defined at 
+ * The TACACS+ Protocol (version 1.78) is defined at
  * <a href='https://tools.ietf.org/html/draft-grant-tacacs-02'>IETF.org</a>.
  * You really need to read this to do anything beyond the simple login/authorization
- * examples here.  It's a very flexible protocol, but confusing outside of its 
+ * examples here.  It's a very flexible protocol, but confusing outside of its
  * historical usage... Many fields are required that
- * don't exactly correspond to an application's scope, so their definitions require 
- * some interpretation.  For example, a "port" field historically refers to 
+ * don't exactly correspond to an application's scope, so their definitions require
+ * some interpretation.  For example, a "port" field historically refers to
  * a physical port within some hardware, e.g. a telephone modem line's connector
- * on terminal server hardware.  And "rem_addr" would traditionally contain the 
- * caller's telephone number.  Translating these for usage with a software 
- * application's login screen is weird.   
+ * on terminal server hardware.  And "rem_addr" would traditionally contain the
+ * caller's telephone number.  Translating these for usage with a software
+ * application's login screen is weird.
  * </p>
  * @author Chris.Janicki@augur.com
  * Copyright 2016 Augur Systems, Inc.  All rights reserved.
@@ -33,6 +35,8 @@ import java.util.concurrent.TimeoutException;
 
 public class TacacsClient extends Object
 {
+    private static final Logger log = Logger.getLogger(TacacsClient.class);
+
 	private String[] hosts, keys;
 	private int[] ports;
 	private final int timeoutMillis;
@@ -40,6 +44,7 @@ public class TacacsClient extends Object
 	final boolean unencrypted;
 	/** Note: instance methods are synchronized to protect access to tacacs. */
 	private TacacsReader tacacs;
+	private final boolean debug;
 
 	/**
 	 * Constructs a new TacacsClient that may be used for multiple calls to newSession().
@@ -58,7 +63,7 @@ public class TacacsClient extends Object
 	 * @param unencrypted A boolean indicating if the payload should remain unencrypted
 	 *   during transmission.
 	 */
-	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect, boolean unencrypted)
+	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect, boolean unencrypted, boolean debug)
 	{
 		this.timeoutMillis = timeoutMillis;
 		this.keys = key.split("[,\\s]+");
@@ -66,22 +71,23 @@ public class TacacsClient extends Object
 		this.ports = new int[hosts.length];
 		this.singleConnect = singleConnect;
 		this.unencrypted = unencrypted;
+		this.debug = debug;
 		for (int i=hosts.length-1; i>=0; i--)
 		{
-			try 
+			try
 			{
 				// Use Java URI class to parse hostname and port; for both IPv4 and IPv6.
-				URI uri = new URI("http://" + hosts[i]); 
+				URI uri = new URI("http://" + hosts[i]);
 				hosts[i] = uri.getHost();
 				ports[i] = uri.getPort();
-				if(ports[i] == -1) 
+				if(ports[i] == -1)
 				{
 					Logging.logger().fine("TACACS+: No port assigned for host, \""+hosts[i]+"\".  " +
 						"Using default port "+TacacsReader.PORT_TACACS+" instead.");
 					ports[i] = TacacsReader.PORT_TACACS;
 				}
-			} 
-			catch (URISyntaxException e) 
+			}
+			catch (URISyntaxException e)
 			{
 				Logging.logger().fine("TACACS+: Bad port assigned for host, \""+hosts[i]+"\".  " +
 					"Using default port "+TacacsReader.PORT_TACACS+" instead.");
@@ -105,9 +111,9 @@ public class TacacsClient extends Object
 	 *   it seems this must be set 'false' for Cisco ACS which closes socket
 	 *   despite offering to accept SINGLE_CONNECT mode.
 	 */
-	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect)
+	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect, boolean debug)
 	{
-		this(host, key, timeoutMillis, singleConnect, false);
+		this(host, key, timeoutMillis, singleConnect, false, debug);
 	}
 
 	/**
@@ -115,66 +121,66 @@ public class TacacsClient extends Object
 	 * @param host The comma and/or space-separated list of hostnames or IP addresses of TACACS+ servers; optionally with colon-separated port.
 	 * @param key The comma and/or space-separated list of secret keys shared with each TACACS+ server.
 	 */
-	public TacacsClient(String host, String key)
+	public TacacsClient(String host, String key, boolean debug)
 	{
-		this(host, key, 5000, false);
+		this(host, key, 5000, false, debug);
 	}
-	
 
-	
+
+
 	/**
 	 * Creates a new session and registers it with communications thread, to process
-	 * the server's reply.  Note that a session may only be used once, per protocol specs!  
+	 * the server's reply.  Note that a session may only be used once, per protocol specs!
  So if you need to authenticate a user, then ask for authorizations, that requires two
- sessions.  (However, those sessions will reuse the underlying socket 
- connection to the remote TACACS+ server, so it's not too inefficient.)  
+ sessions.  (However, those sessions will reuse the underlying socket
+ connection to the remote TACACS+ server, so it's not too inefficient.)
  Synchronized to protect creation/shutdown of TacacsReader.
-	 * 
+	 *
 	 * @param svc  The TAC_PLUS.AUTHEN.SVC requesting the action
-	 * @param port The String port identifier where the user is attached; 
+	 * @param port The String port identifier where the user is attached;
 	 *   e.g. a physical port number on a terminal server, or maybe just "console" for an app.
-	 * @param rem_addr  The String description of the user's location; 
+	 * @param rem_addr  The String description of the user's location;
 	 *   e.g. a network address, or a geographic equipment location.
-	 * @param priv_lvl  The byte privilege level of the requesting user;  range is 0-15; 
+	 * @param priv_lvl  The byte privilege level of the requesting user;  range is 0-15;
 	 *   e.g. TAC_PLUS.PRIV_LVL.USER.code()  (a pre-defined value=1)
-	 * @return a SessionClient that can be used for one authentication, 
+	 * @return a SessionClient that can be used for one authentication,
 	 *   authorization, or accounting request.
 	 * @throws SocketTimeoutException (a subclass of IOException!) if the connection isn't made before the timeout.
 	 * @throws java.io.IOException if there is any problem, other than SocketTimeoutException.
 	 */
 	public synchronized SessionClient newSession(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl) {
 		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
-		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, singleConnect, unencrypted);
+		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, singleConnect, unencrypted, debug);
 		t.addSession(s);
 		return s;
 	}
-	
+
 	/**
 	 * This is the same as the other newSessionInteractive(), except it includes a
 	 * UserInterface parameter.  This is only needed for interactive authentications,
-	 * i.e. authentication type = TAC_PLUS.AUTHEN.TYPE.ASCII.  
+	 * i.e. authentication type = TAC_PLUS.AUTHEN.TYPE.ASCII.
 	 * Synchronized to protect creation/shutdown of TacacsReader.
 	 */
 	public synchronized SessionClient newSessionInteractive(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, UserInterface ui) {
 		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
-		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, ui, singleConnect, unencrypted);
+		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, ui, singleConnect, unencrypted, debug);
 		t.addSession(s);
 		return s;
 	}
-	
+
 	/**
 	 * Synchronized to protect creation/shutdown of TacacsReader.
 	 */
 	public synchronized void shutdown()
 	{
-		if (tacacs!=null && !tacacs.isShutdown()) 
+		if (tacacs!=null && !tacacs.isShutdown())
 		{
-			tacacs.shutdown(); 
-			tacacs=null; 
+			tacacs.shutdown();
+			tacacs=null;
 		}
 	}
-	
-		
+
+
 	/**
 	 * Synchronized to protect creation/shutdown of TacacsReader.
 	 */
@@ -185,36 +191,36 @@ public class TacacsClient extends Object
 			Socket sock=null;
 			for (int i=0; i<hosts.length; i++)
 			{
-				try 
-				{ 
+				try
+				{
 					//System.out.println("TACACS+: Trying server at "+hosts[i]+":"+ports[i]);
 					sock = new Socket();
 					sock.connect(new InetSocketAddress(hosts[i],ports[i]), timeoutMillis); // throws IOException
 					String key = (i<keys.length) ? keys[i] : keys[keys.length-1]; // reuse last only if not enough
-					tacacs = new TacacsReader(sock, key);
+					tacacs = new TacacsReader(sock, key, debug);
 					tacacs.start();
-					Logging.logger().fine("TACACS+: Connected to server at "+hosts[i]+":"+ports[i]);
+					log.trace("TACACS: Connected to server at "+hosts[i]+":"+ports[i]);
 					return tacacs;
 				}
-				catch(IOException ioe) 
-				{ 
+				catch(IOException ioe)
+				{
 					if (sock!=null) { try { sock.close(); } catch (IOException ioe2) { } }
-					tacacs = null;
-					Logging.logger().severe("TACACS+: Unable to contact TACACS+ server @ "+hosts[i]+" ("+ioe+")");
+ 					tacacs = null;
+					log.error("TACACS: Unable to contact TACACS+ server @ "+hosts[i]+" ("+ioe+")");
 				}
 			}
 			if (tacacs == null) { throw new TacacsException("Unable to contact any TACACS+ server(s)."); }
 		}
 		return tacacs;
 	}
-	
+
 
 //	/**
-//	 * This is a convenience method that creates a new session using some default 
-//	 * default parameters, then attempts to authenticate.  For full control, 
-//	 * instantiate your own SessionClient with your own parameters, then call its 
+//	 * This is a convenience method that creates a new session using some default
+//	 * default parameters, then attempts to authenticate.  For full control,
+//	 * instantiate your own SessionClient with your own parameters, then call its
 //	 * authenticate_PAP() method.
-//	 * 
+//	 *
 //	 * @param username The String id for authentication
 //	 * @param password The String password for authentication
 //	 * @return AuthenReply
@@ -227,10 +233,10 @@ public class TacacsClient extends Object
 //		SessionClient session = newSession(TAC_PLUS.AUTHEN.SVC.LOGIN, "console", "localhost", TAC_PLUS.PRIV_LVL.USER.code()); // throws exceptions if can't contact TACACS+
 //		return session.authenticate_PAP(username, password);
 //	}
-	
+
 
 	// =========================== EXAMPLES ======================================
-	
+
 	/**
 	 * Example test ground.
 	 */
@@ -241,27 +247,27 @@ public class TacacsClient extends Object
 		{
 			String host = args.length>0 ? args[0] : null;
 			String key = args.length>1 ? args[1] : "augur.com";
-			TacacsClient tc = new TacacsClient(host, key);
+			TacacsClient tc = new TacacsClient(host, key, true);
 
 			// substitute another example here for testing
-			exampleAuthenInteractive(args, tc); 
+			exampleAuthenInteractive(args, tc);
 			// If you run another command, first check tc.isStillConnected().
 			tc.shutdown();
 		}
 	}
-	
-	
+
+
 	/**
-	 * Authenticate by prompting for requested data at console; 
+	 * Authenticate by prompting for requested data at console;
 	 * usually the TACACS+ server asks for a username, then a password.
 	 * If successful authentication, then get authorizations too.
-	 * 
-	 * @param args  The command line String[] arguments; 
+	 *
+	 * @param args  The command line String[] arguments;
 	 * the TACACS+ server's host name or address must be the first argument.
 	 */
 	private static void exampleAuthenInteractive(String[] args, TacacsClient tc) throws IOException, TimeoutException
 	{
-		UserInterface ui = UserInterface.getConsoleInstance(); // The UI will store the entered username... We'll need it for authorization.		
+		UserInterface ui = UserInterface.getConsoleInstance(); // The UI will store the entered username... We'll need it for authorization.
 		SessionClient s = tc.newSessionInteractive(TAC_PLUS.AUTHEN.SVC.LOGIN, "console", "localhost", TAC_PLUS.PRIV_LVL.USER.code(), ui);
 		AuthenReply authen = s.authenticate_ASCII();
 		if (authen.server_msg!=null) System.out.println("> \""+authen.server_msg+"\"");
@@ -269,12 +275,12 @@ public class TacacsClient extends Object
 		System.out.println();
 		if (authen.isOK()) { exampleAuthorize(ui.getUsername(), tc); }
 	}
-	
+
 	/**
 	 * Authenticate via PAP.
 	 * Usage: java -cp . TacacsClient [serverHost] [username] [password]
-	 * 
-	 * @param args  The command line String[] arguments; 
+	 *
+	 * @param args  The command line String[] arguments;
 	 * the TACACS+ server's host name or address must be the first argument;
 	 * the username is second, and the password is the third argument.
 	 */
@@ -287,19 +293,19 @@ public class TacacsClient extends Object
 		System.out.println();
 		if (authen.isOK()) { exampleAuthorize(args[1], tc); }
 	}
-	
+
 	/**
 	 * Get "trapstation" service authorizations for the given user.
 	 * Usually this is called after the user has been authenticated in a previous
 	 * session.
 	 * <p>
 	 * Dev note: AuthorReply.getArguments() would return an Argument[] containing
-	 * all the authorization strings (key=value) returned by the server for the 
-	 * requested 'username' and 'service'.  Your app can use those strings to limit 
-	 * privileged features.  The TACACS+ server admin would first have to edit the 
+	 * all the authorization strings (key=value) returned by the server for the
+	 * requested 'username' and 'service'.  Your app can use those strings to limit
+	 * privileged features.  The TACACS+ server admin would first have to edit the
 	 * server's configuration to add the "service" for your app, then associate
 	 * permission keys/values with users (or groups) in the server's configuration.
-	 * Those key/values are returned to you based on the authenticated username.  
+	 * Those key/values are returned to you based on the authenticated username.
 	 * The fact that a username has been authenticated is trusted.  The server will
 	 * tell you the key/values for any username + service combination, but it's up
 	 * to your app to first authenticate the user, usually with a previous TACACS+
@@ -311,23 +317,23 @@ public class TacacsClient extends Object
 	{
 		SessionClient s = tc.newSession(TAC_PLUS.AUTHEN.SVC.LOGIN, "console", "localhost", TAC_PLUS.PRIV_LVL.USER.code());
 		AuthorReply author = s.authorize(
-			username, 
-			TAC_PLUS.AUTHEN.METH.TACACSPLUS, 
-			TAC_PLUS.AUTHEN.TYPE.ASCII, 
-			TAC_PLUS.AUTHEN.SVC.LOGIN, 
+			username,
+			TAC_PLUS.AUTHEN.METH.TACACSPLUS,
+			TAC_PLUS.AUTHEN.TYPE.ASCII,
+			TAC_PLUS.AUTHEN.SVC.LOGIN,
 			new Argument[] { new Argument("service=trapstation") }); // The "service" attribute is required!!!  "trapstation" is an example app for which I want to know the user's permitted role
 		if (author.server_msg!=null) System.out.println("> \""+author.server_msg+"\"");
 		System.out.println("TACACS+: Authorization success? "+ author.isOK());
 		System.out.println();
 	}
-	
+
 	/**
 	 * Start an accounting record.
 	 * Usually this is called after the username has been authenticated in a previous
-	 * session.  And a later session should stop the record.  
-	 * 
-	 * Disclaimer: I don't really understand the accounting aspect of TACACS.  
-	 * Consider this example a rough skeleton.  It was created just to test the 
+	 * session.  And a later session should stop the record.
+	 *
+	 * Disclaimer: I don't really understand the accounting aspect of TACACS.
+	 * Consider this example a rough skeleton.  It was created just to test the
 	 * basic I/O.
 	 */
 	private static void exampleAccount(String username, TacacsClient tc) throws IOException, TimeoutException
@@ -346,7 +352,7 @@ public class TacacsClient extends Object
 		System.out.println("TACACS+: Accounting success? "+ acct.isOK());
 		System.out.println("");
 	}
-	
-	
-	
+
+
+
 }

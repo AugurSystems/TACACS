@@ -5,19 +5,11 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
+    id 'eclipse'
 }
 
 repositories {
-    mavenLocal()
-    maven {
-        url = uri('http://repo1.maven.org/maven2')
-
-        // allowInsecureProtocol = true
-    }
-
-    maven {
-        url = uri('https://repo.maven.apache.org/maven2/')
-    }
+    mavenCentral()
 }
 
 group = 'AugurSystems'
@@ -31,4 +23,8 @@ publishing {
             from(components.java)
         }
     }
+}
+
+dependencies {
+    implementation 'log4j:log4j:1.2.17'
 }
