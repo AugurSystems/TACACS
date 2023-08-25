@@ -26,8 +26,8 @@ public class SessionClient extends Session
 	private static final AtomicInteger PPP_ID = new AtomicInteger(); // for CHAP
 	private static final int CHAP_CHALLENGE_LENGTH = 16;
 
-	private String user;
-	private String password;
+	//private String user;
+	//private String password;
 
 	/** Client-side constructor; end-user should use newSession() in TacacsReader. */
 	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect, boolean unencrypted, boolean debug)
@@ -82,7 +82,7 @@ public class SessionClient extends Session
 						end(p);
 						break;
 					case GETDATA: // generic authen questions, e.g. favorite teacher?  Only used during ASCII (interactive) AUTHEN LOGIN
-						if (ui==null) { throw new TacacsException("No interactive user interface available."); } // shouldn't happen
+						if (ui==null) { throw new IOException("No interactive user interface available."); } // shouldn't happen
 						String data = ui.getUserInput(authenReply.server_msg, authenReply.hasFlag(TAC_PLUS.REPLY.FLAG.NOECHO), authenReply.status); // blocks for user input
 						tacacs.write(new AuthenContinue
 						(
@@ -92,7 +92,7 @@ public class SessionClient extends Session
 						));
 						break;
 					case GETUSER: // only used during ASCII (interactive) AUTHEN LOGIN
-						if (ui==null) { throw new TacacsException("No interactive user interface available."); }
+						if (ui==null) { throw new IOException("No interactive user interface available."); }
 						String username = ui.getUserInput(authenReply.server_msg, authenReply.hasFlag(TAC_PLUS.REPLY.FLAG.NOECHO), authenReply.status); // blocks for user input
 						tacacs.write(new AuthenContinue
 						(
@@ -102,7 +102,7 @@ public class SessionClient extends Session
 						));
 						break;
 					case GETPASS:
-						if (ui==null) { throw new TacacsException("No interactive user interface available."); }
+						if (ui==null) { throw new IOException("No interactive user interface available."); }
 						String password = ui.getUserInput(authenReply.server_msg, authenReply.hasFlag(TAC_PLUS.REPLY.FLAG.NOECHO), authenReply.status); // blocks for user input
 						tacacs.write(new AuthenContinue
 						(
@@ -126,6 +126,8 @@ public class SessionClient extends Session
 			case ACCT:
 				end(p);
 				break;
+			default:
+			    break;
 		}
 	}
 

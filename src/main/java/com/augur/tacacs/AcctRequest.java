@@ -21,7 +21,7 @@ public class AcctRequest extends Packet
 	final String port;
 	final String rem_addr;
 	final Argument[] arguments;
-	
+
 	@Override public String toString()
 	{
 		StringBuilder sb = new StringBuilder(100);
@@ -39,7 +39,7 @@ public class AcctRequest extends Packet
 		sb.append("]]");
 		return sb.toString();
 	}
-	
+
 
 	/**
 	 * Constructor for when reading incoming packets.
@@ -47,7 +47,7 @@ public class AcctRequest extends Packet
 	AcctRequest(Header header, byte[] body) throws IOException
 	{
 		super(header);
-		// Verify 
+		// Verify
 		final int overhead = 9;
 		int chkLen = overhead+body[5]+body[6]+body[7]+body[8];
 		if (overhead+body[8] > body.length) { throw new IOException("Corrupt packet or bad key"); }
@@ -65,21 +65,21 @@ public class AcctRequest extends Packet
 		i=body[6];     port = (i>0) ? new String(body, offset, i, StandardCharsets.UTF_8) : null; offset+=i;
 		i=body[7]; rem_addr = (i>0) ? new String(body, offset, i, StandardCharsets.UTF_8) : null; offset+=i;
 		arguments = new Argument[arg_cnt];
-		for (int a=0; a<arg_cnt; a++) 
-		{ 
+		for (int a=0; a<arg_cnt; a++)
+		{
 			String arg = new String(body, offset, body[overhead+a], StandardCharsets.UTF_8);
-			arguments[a] = new Argument(arg); 
-			offset+=body[overhead+a]; 
+			arguments[a] = new Argument(arg);
+			offset+=body[overhead+a];
 		}
 	}
 
-	
+
 	/**
 	 * Constructor for when building outgoing packets.
 	 */
 	AcctRequest
 	(
-		Header header, 
+		Header header,
 		byte flags,
 		TAC_PLUS.AUTHEN.METH authen_method,
 		byte priv_lvl,
@@ -113,7 +113,7 @@ public class AcctRequest extends Packet
 	 */
 	@Override void write(OutputStream out, byte[] key) throws IOException
 	{
-		byte[] userBytes = user.getBytes(StandardCharsets.UTF_8); 
+		byte[] userBytes = user.getBytes(StandardCharsets.UTF_8);
 		byte[] portBytes = port.getBytes(StandardCharsets.UTF_8);
 		byte[] remaBytes = rem_addr.getBytes(StandardCharsets.UTF_8);
 		// Truncating to fit packet...  lengths are limited to a byte
@@ -122,7 +122,7 @@ public class AcctRequest extends Packet
 		if (remaBytes!=null && remaBytes.length>FF) { remaBytes = Arrays.copyOfRange(remaBytes,0,FF); }
 		// Truncating the number of arguments, and the length of the byte[] representations... limited to a byte
 		byte[][] argsBytes = new byte[Math.min(FF,arguments.length)][];
-		for (int i=0; i<argsBytes.length; i++) 
+		for (int i=0; i<argsBytes.length; i++)
 		{
 			argsBytes[i] = arguments[i].toString().getBytes(StandardCharsets.UTF_8);
 			if (argsBytes[i].length>FF) { argsBytes[i] = Arrays.copyOfRange(argsBytes[i],0,FF); }
@@ -145,5 +145,5 @@ public class AcctRequest extends Packet
 		for (byte[] aBytes : argsBytes) { body.write(aBytes); }
 		header.writePacket(out, body.toByteArray(), key);
 	}
-	
+
 }
