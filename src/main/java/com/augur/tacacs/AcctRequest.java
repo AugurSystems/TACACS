@@ -116,10 +116,13 @@ public class AcctRequest extends Packet
 		byte[] userBytes = user.getBytes(StandardCharsets.UTF_8);
 		byte[] portBytes = port.getBytes(StandardCharsets.UTF_8);
 		byte[] remaBytes = rem_addr.getBytes(StandardCharsets.UTF_8);
+		if (userBytes == null || portBytes == null || remaBytes == null) {
+		    throw new NullPointerException("userBytes/portBytes/remaBytes is null (should not happen)");
+		}
 		// Truncating to fit packet...  lengths are limited to a byte
-		if (userBytes!=null && userBytes.length>FF) { userBytes = Arrays.copyOfRange(userBytes,0,FF); }
-		if (portBytes!=null && portBytes.length>FF) { portBytes = Arrays.copyOfRange(portBytes,0,FF); }
-		if (remaBytes!=null && remaBytes.length>FF) { remaBytes = Arrays.copyOfRange(remaBytes,0,FF); }
+		if (userBytes.length>FF) { userBytes = Arrays.copyOfRange(userBytes,0,FF); }
+		if (portBytes.length>FF) { portBytes = Arrays.copyOfRange(portBytes,0,FF); }
+		if (remaBytes.length>FF) { remaBytes = Arrays.copyOfRange(remaBytes,0,FF); }
 		// Truncating the number of arguments, and the length of the byte[] representations... limited to a byte
 		byte[][] argsBytes = new byte[Math.min(FF,arguments.length)][];
 		for (int i=0; i<argsBytes.length; i++)

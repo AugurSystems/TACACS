@@ -305,7 +305,8 @@ public class SessionClient extends Session
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
-	public synchronized AuthorReply authorize(String username, TAC_PLUS.AUTHEN.METH authen_meth, TAC_PLUS.AUTHEN.TYPE authen_type, TAC_PLUS.AUTHEN.SVC authen_svc, Argument[] args) throws TimeoutException, IOException
+	@SuppressWarnings("hiding")
+    public synchronized AuthorReply authorize(String username, TAC_PLUS.AUTHEN.METH authen_meth, TAC_PLUS.AUTHEN.TYPE authen_type, TAC_PLUS.AUTHEN.SVC authen_svc, Argument[] args) throws TimeoutException, IOException
 	{
 		tacacs.write(new AuthorRequest
 		(
@@ -335,7 +336,8 @@ public class SessionClient extends Session
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
-	public synchronized AcctReply account(byte flags, String username, TAC_PLUS.AUTHEN.METH authen_meth, TAC_PLUS.AUTHEN.TYPE authen_type, TAC_PLUS.AUTHEN.SVC authen_svc, Argument[] args) throws TimeoutException, IOException
+	@SuppressWarnings("hiding")
+    public synchronized AcctReply account(byte flags, String username, TAC_PLUS.AUTHEN.METH authen_meth, TAC_PLUS.AUTHEN.TYPE authen_type, TAC_PLUS.AUTHEN.SVC authen_svc, Argument[] args) throws TimeoutException, IOException
 	{
 		if (
 			flags!=TAC_PLUS.ACCT.FLAG.START.code() &&

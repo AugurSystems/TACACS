@@ -69,6 +69,8 @@ public class SessionServer extends Session
 				tacacs.write(r);
 				end(r);
 				break;
+			default:
+			    break;
 		}
 	}
 

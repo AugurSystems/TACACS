@@ -1,13 +1,12 @@
 package com.augur.tacacs;
 
-import java.net.Socket;
-import java.io.IOException;
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 
 import org.apache.log4j.Logger;
 
@@ -58,7 +57,9 @@ public class TacacsReader extends Thread
 			if (socket!=null)
 			{
 				try { socket.close(); }
-				catch(IOException ioe) { }
+				catch(IOException ioe) {
+				    // empty
+				}
 			}
 		}
 	}

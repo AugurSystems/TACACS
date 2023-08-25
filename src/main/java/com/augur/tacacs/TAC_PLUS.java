@@ -1,33 +1,33 @@
 package com.augur.tacacs;
 
 /**
- * This class has all the byte codes used in the protocol, accessed as inner 
+ * This class has all the byte codes used in the protocol, accessed as inner
  * classes and enumerations.  For example: TAC_PLUS.AUTHEN.TYPE.ASCII
- * Each code value (a byte) is accessed via the 
- * enumeration's code() method, for example: TAC_PLUS.AUTHEN.TYPE.ASCII.code() 
- * which returns 1.   This naming format mirrors the underscore-separated values defined in 
+ * Each code value (a byte) is accessed via the
+ * enumeration's code() method, for example: TAC_PLUS.AUTHEN.TYPE.ASCII.code()
+ * which returns 1.   This naming format mirrors the underscore-separated values defined in
  * <a href='https://tools.ietf.org/html/draft-ietf-opsawg-tacacs-01'>The TACACS+ Protocol</a>
- * Internet Draft by IETF.  There are some exceptions... 
+ * Internet Draft by IETF.  There are some exceptions...
  * Naming tiers had to be tweaked (e.g. ACTION was added: TAC_PLUS.AUTHEN.ACTION)
  * since the specification overloads some top levels.
  * <p>
- * The use of enumerations ensures compile-time checks of the correct references 
- * passed as method parameters.  
+ * The use of enumerations ensures compile-time checks of the correct references
+ * passed as method parameters.
  * (This file may look like a mess, but a modern Java editor will help you
  * navigate subclasses at you type, so the structure is also self-documenting.)
  * </p>
- * 
+ *
  * @author Chris.Janicki@augur.com
  * Copyright 2016 Augur Systems, Inc.  All rights reserved.
  */
 	public final class TAC_PLUS
 	{
 		private TAC_PLUS() {} // private constructors prevent instances (Unfortunately, Java has no true static classes.)
-		
+
 		public static enum PRIV_LVL
-		{ 
+		{
 			MAX(0x0f),ROOT(0x0f),USER(1),MIN(0);
-			private final byte code; 
+			private final byte code;
 			private PRIV_LVL(int code) { this.code=(byte)code; }
 			public byte code() { return code; }
 		}
@@ -35,71 +35,71 @@ package com.augur.tacacs;
 		public static final class PACKET
 		{
 			private PACKET() {}
-		
+
 			public static enum VERSION
-			{ 
+			{
 				v13_0(0xc0),v13_1(0xc1);
 				private final byte code;
 				private VERSION(int code) { this.code=(byte)code; }
 				public byte code() { return code; }
-				static VERSION forCode(byte b) 
+				static VERSION forCode(byte b)
 				{
 					for (VERSION v : values()) { if (v.code==b) { return v; } }
 					return null;
 				}
 			}
 			public static enum TYPE
-			{ 
+			{
 				/** Upgrade connection to TLS.  [New packet type code; appears in "draft-ietf-opsawg-tacacs-04" dated July 8, 2016] */
 				START_TLS(0),
 				AUTHEN(1),AUTHOR(2),ACCT(3);
 				private final byte code;
 				private TYPE(int code) { this.code=(byte)code; }
 				public byte code() { return code; }
-				static TYPE forCode(byte b) 
+				static TYPE forCode(byte b)
 				{
 					for (TYPE t : values()) { if (t.code==b) { return t; } }
 					return null;
 				}
 			}
 			public static enum FLAG
-			{ 
+			{
 				UNENCRYPTED(1),SINGLE_CONNECT(4);
 				private final byte code;
 				private FLAG(int code) { this.code=(byte)code; }
 				public byte code() { return code; }
 			}
 		}
-		
+
 		public static final class REPLY
 		{
 			private REPLY() {}
 			public static enum FLAG
-			{ 
+			{
 				NOECHO(1);
 				private final byte code;
 				private FLAG(int code) { this.code=(byte)code; }
 				public byte code() { return code; }
 			}
 		}
-		
+
 		public static final class CONTINUE
 		{
 			private CONTINUE() {}
 			public static enum FLAG
-			{ 
+			{
 				ABORT(1);
 				private final byte code;
 				private FLAG(int code) { this.code=(byte)code; }
 				public byte code() { return code; }
 			}
 		}
-		
+
 		public static final class AUTHEN
 		{
 			private AUTHEN() {}
 			public static enum ACTION
-			{ 
+			{
 				LOGIN(1),CHPASS(2),SENDAUTH(3);
 				private final byte code;
 				private ACTION(int code) { this.code=(byte)code; }
@@ -107,10 +107,11 @@ package com.augur.tacacs;
 				public static ACTION forCode(byte b) { for (ACTION e : values()) { if (e.code==b) { return e; } } return null; }
 			}
 			public static enum TYPE
-			{ 
+			{
 				/** First appeared in "draft-ietf-opsawg-tacacs-02.txt" dated 2016-04-12 */
 				NOT_SET(0),
-				ASCII(1),PAP(2),CHAP(3),/**@deprecated*/ARAP(4),MSCHAP(5),MSCHAPV2(6);
+				ASCII(1),PAP(2),CHAP(3),/**@deprecated*/@SuppressWarnings("dep-ann")
+                ARAP(4),MSCHAP(5),MSCHAPV2(6);
 				private final byte code;
 				private TYPE(int code) { this.code=(byte)code; }
 				public byte code() { return code; }
@@ -147,25 +148,25 @@ package com.augur.tacacs;
 				public static STATUS forCode(byte b) { for (STATUS e : values()) { if (e.code==b) { return e; } } return null; }
 			}
 		}
-		
+
 		public static final class AUTHOR
 		{
 			private AUTHOR() {}
 			public static enum STATUS
 			{
-				PASS_ADD(1),PASS_REPL(2),FAIL(0x10),ERROR(0x11),FOLLOW(0x21); 
+				PASS_ADD(1),PASS_REPL(2),FAIL(0x10),ERROR(0x11),FOLLOW(0x21);
 				private STATUS(int code) { this.code=(byte)code; }
 				private final byte code;
 				public byte code() { return code; }
 				public static STATUS forCode(byte b) { for (STATUS e : values()) { if (e.code==b) { return e; } } return null; }
 			}
 		}
-		
+
 		public static final class ACCT
 		{
 			private ACCT() {}
 			public static enum FLAG
-			{ 
+			{
 				START(2),STOP(4),WATCHDOG(8);
 				private final byte code;
 				private FLAG(int code) { this.code=(byte)code; }
@@ -173,7 +174,7 @@ package com.augur.tacacs;
 			}
 			public static enum STATUS
 			{
-				SUCCESS(1),ERROR(2),FOLLOW(0x21); 
+				SUCCESS(1),ERROR(2),FOLLOW(0x21);
 				private STATUS(int code) { this.code=(byte)code; }
 				private final byte code;
 				public byte code() { return code; }
