@@ -9,16 +9,13 @@ import org.apache.log4j.Logger;
  */
 public class SessionServer extends Session
 {
-    private static final Logger log = Logger.getLogger(SessionServer.class);
-
-	private final boolean debug;
-
+	private final Logger logger;
 
 	/** Server-side constructor */
-	SessionServer(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, byte[] sessionID, boolean debug)
+	SessionServer(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, byte[] sessionID, Logger debugLogger)
 	{
 		super(svc, port, rem_addr, priv_lvl, tacacs, sessionID);
-		this.debug = debug;
+		this.logger = debugLogger;
 	}
 
 
@@ -31,7 +28,7 @@ public class SessionServer extends Session
 	{
 		super.handlePacket(p);
 		Packet r;
-		if (debug) { log.debug("TACACS rcv <-- "+p); }
+		if (logger != null) { logger.debug("TACACS rcv <-- "+p); }
 		switch(p.header.type)
 		{
 			case AUTHEN:

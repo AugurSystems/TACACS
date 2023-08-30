@@ -16,10 +16,8 @@ import org.apache.log4j.Logger;
  */
 public class SessionClient extends Session
 {
-    private static final Logger log = Logger.getLogger(SessionClient.class);
-
     private static final int TIMEOUT_MILLIS = 5000; // TODO: don't hard-code
-	private final boolean debug;
+	private final Logger logger;
 	private UserInterface ui;
 	private final boolean singleConnect;
 	private byte headerFlags;
@@ -30,9 +28,9 @@ public class SessionClient extends Session
 	//private String password;
 
 	/** Client-side constructor; end-user should use newSession() in TacacsReader. */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect, boolean unencrypted, boolean debug)
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect, boolean unencrypted, Logger debugLogger)
 	{
-		this(svc, port, rem_addr, priv_lvl, tacacs, null, singleConnect, unencrypted, debug);
+		this(svc, port, rem_addr, priv_lvl, tacacs, null, singleConnect, unencrypted, debugLogger);
 	}
 
 	/**
@@ -40,13 +38,13 @@ public class SessionClient extends Session
 	 * Only needed for interactive (ASCII) login,
 	 * which needs to prompt user for info via a UserInterface.
 	 */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, UserInterface ui, boolean singleConnect, boolean unencrypted, boolean debug)
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, UserInterface ui, boolean singleConnect, boolean unencrypted, Logger debugLogger)
 	{
 		super(svc, port, rem_addr, priv_lvl, tacacs, null);
 		this.ui = ui;
 		this.singleConnect = singleConnect;
 		this.headerFlags = FLAG_ZERO;
-		this.debug = debug;
+		this.logger = debugLogger;
 		if (singleConnect) {
 			this.headerFlags |= TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT.code();
 		}
@@ -71,7 +69,7 @@ public class SessionClient extends Session
 	 */
 	@Override synchronized void handlePacket(Packet p) throws IOException {
 		super.handlePacket(p); // stores firstPacket, for isSingleConnectMode()
-		if (debug) { log.debug("TACACS rcv <-- "+p); }
+		if (logger != null) { logger.debug("RCV <-- "+p); }
 		switch(p.header.type)
 		{
 			case AUTHEN: // must be a Reply from the server
@@ -88,7 +86,8 @@ public class SessionClient extends Session
 						(
 							p.getHeader().next(TAC_PLUS.PACKET.VERSION.v13_0),
 							data,
-							FLAG_ZERO
+							FLAG_ZERO,
+							false
 						));
 						break;
 					case GETUSER: // only used during ASCII (interactive) AUTHEN LOGIN
@@ -98,7 +97,8 @@ public class SessionClient extends Session
 						(
 							p.getHeader().next(TAC_PLUS.PACKET.VERSION.v13_0),
 							username,
-							FLAG_ZERO
+							FLAG_ZERO,
+							false
 						));
 						break;
 					case GETPASS:
@@ -108,7 +108,8 @@ public class SessionClient extends Session
 						(
 							p.getHeader().next(TAC_PLUS.PACKET.VERSION.v13_0),
 							password,
-							FLAG_ZERO
+							FLAG_ZERO,
+							true
 						));
 						break;
 					case RESTART: // per spec, server didn't like our authen_type; TODO: try types?

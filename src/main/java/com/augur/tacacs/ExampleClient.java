@@ -4,6 +4,8 @@ import java.io.InvalidObjectException;
 import java.rmi.AccessException;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.log4j.Logger;
+
 /**
  * This is an example TACACS+ authentication, followed by authorization.
  * For this example, it is assumed that the TACACS+ server has an attribute
@@ -38,9 +40,9 @@ public class ExampleClient
 	 * @throws IOException if there is any underlying problem contacting the
 	 *   TACACS+ server
 	 */
-	public String login(String tacacsHost, String tacacsKey, String username, String password, boolean debug) throws IOException, AccessException, TimeoutException, InvalidObjectException
+	public String login(String tacacsHost, String tacacsKey, String username, String password, Logger debugLogger) throws IOException, AccessException, TimeoutException, InvalidObjectException
 	{
-		TacacsClient tc = new TacacsClient(tacacsHost, tacacsKey, 10000, false, debug); // 10 second time-out for contacting TACACS+, and don't attempt single-connect for test simplicity
+		TacacsClient tc = new TacacsClient(tacacsHost, tacacsKey, 10000, false, debugLogger); // 10 second time-out for contacting TACACS+, and don't attempt single-connect for test simplicity
 		SessionClient authenSession = tc.newSession(TAC_PLUS.AUTHEN.SVC.LOGIN, "console", "localhost", TAC_PLUS.PRIV_LVL.USER.code()); // IO or Timeout exceptions if can't contact TACACS+
 		AuthenReply authentication = authenSession.authenticate_PAP(username, password);
 		if (authentication.isOK())

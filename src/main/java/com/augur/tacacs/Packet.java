@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 
+import org.apache.log4j.Logger;
+
 /**
  * Each TACACS+ packet has a standard header.  The body structure is variable.
  * This class is abstract, implemented for specific packet types by subclasses:
@@ -49,7 +51,7 @@ public abstract class Packet
 	 * @return A Packet subclass instance: AuthenReply, AcctReply, or AuthorReply
 	 * @throws IOException
 	 */
-	public static Packet readNext(TacacsReader tacacs, byte[] key, boolean debug) throws IOException
+	public static Packet readNext(TacacsReader tacacs, byte[] key, Logger logger) throws IOException
 	{
 		byte[] headerBytes = new byte[12];
 //		System.out.println("Waiting to read a header...");
@@ -72,19 +74,19 @@ public abstract class Packet
 					if (s==null) // This is the only way to know the packet is AuthenStart and not AuthenContinue!
 					{
 						AuthenStart p = new AuthenStart(header, bodyClear);
-						s = new SessionServer(p.authen_service, p.port, p.rem_addr, p.priv_lvl, tacacs, header.sessionID, debug);
+						s = new SessionServer(p.authen_service, p.port, p.rem_addr, p.priv_lvl, tacacs, header.sessionID, logger);
 						tacacs.addSession(s);
 						return p;
 					}
 					else { return new AuthenContinue(header, bodyClear); }
 				case ACCT:
 						AcctRequest acp = new AcctRequest(header, bodyClear);
-						s = new SessionServer(acp.authen_service, acp.port, acp.rem_addr, acp.priv_lvl, tacacs, header.sessionID, debug);
+						s = new SessionServer(acp.authen_service, acp.port, acp.rem_addr, acp.priv_lvl, tacacs, header.sessionID, logger);
 						tacacs.addSession(s);
 						return acp;
 				case AUTHOR:
 						AuthorRequest aup = new AuthorRequest(header, bodyClear);
-						s = new SessionServer(aup.authen_service, aup.port, aup.rem_addr, aup.priv_lvl, tacacs, header.sessionID, debug);
+						s = new SessionServer(aup.authen_service, aup.port, aup.rem_addr, aup.priv_lvl, tacacs, header.sessionID, logger);
 						tacacs.addSession(s);
 						return aup;
 				default: throw new IOException("Server-side packet header type not supported: " + header.type); // shouldn't happen

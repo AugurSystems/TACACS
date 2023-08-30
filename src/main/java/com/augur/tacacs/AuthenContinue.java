@@ -15,14 +15,16 @@ public class AuthenContinue extends Packet
 	final byte flags;
 	final String user_msg;
 	final String data;
-	
+	final boolean hide_msg; // to hide password in possible logging
+
 	/**
 	 * Constructor for when reading incoming packets.
 	 */
 	AuthenContinue(Header header, byte[] body) throws IOException
 	{
 		super(header);
-		// Verify 
+		this.hide_msg = false;
+		// Verify
 		final int overhead = 5;
 		if (body.length<overhead) { throw new IOException("Corrupt packet or bad key"); }
 		int chkLen = overhead+body[0]+body[1];
@@ -30,30 +32,32 @@ public class AuthenContinue extends Packet
 		//
 		flags = body[4];
 		int ulen = toInt(body[0],body[1]);
-		user_msg = (ulen>0) ? new String(body, overhead, ulen, StandardCharsets.UTF_8) : null; 
+		user_msg = (ulen>0) ? new String(body, overhead, ulen, StandardCharsets.UTF_8) : null;
 		int dlen = toInt(body[2],body[3]);
-		data = (dlen>0) ? new String(body, overhead+ulen, dlen, StandardCharsets.UTF_8) : null; 
+		data = (dlen>0) ? new String(body, overhead+ulen, dlen, StandardCharsets.UTF_8) : null;
 	}
 
-	
+
 	/**
-	 * Constructor for when building outgoing packets.  Note that there are 
+	 * Constructor for when building outgoing packets.  Note that there are
 	 * currently no uses of the 'data' field in CONTINUE packets.
 	 */
-	AuthenContinue(Header header, String user_msg, byte flags)
+	AuthenContinue(Header header, String user_msg, byte flags, boolean hide_msg)
 	{
 		super(header);
 		this.user_msg = user_msg;
 		this.data = null; // no uses as of version 13.1
 		this.flags = flags;
+		this.hide_msg = hide_msg;
 	}
 
 
 	@Override public String toString()
 	{
-		return getClass().getSimpleName()+":"+header+"[flags:"+flags+" user_msg:'"+user_msg+"' data:'"+data+"']";
+	    String msg = hide_msg ? "(hidden)" : user_msg;
+		return getClass().getSimpleName()+":"+header+"[flags:"+flags+" user_msg:'"+msg+"' data:'"+data+"']";
 	}
-	
+
 
 	/**
 	 * Writes the whole packet.
@@ -77,5 +81,5 @@ public class AuthenContinue extends Packet
 		byte[] bodyBytes = body.toByteArray();
 		header.writePacket(out, bodyBytes, key);
 	}
-	
+
 }

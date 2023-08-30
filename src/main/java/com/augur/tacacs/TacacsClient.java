@@ -1,10 +1,8 @@
 package com.augur.tacacs;
 
-
-
-import java.net.Socket;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -35,8 +33,6 @@ import org.apache.log4j.Logger;
 
 public class TacacsClient extends Object
 {
-    private static final Logger log = Logger.getLogger(TacacsClient.class);
-
 	private String[] hosts, keys;
 	private int[] ports;
 	private final int timeoutMillis;
@@ -44,7 +40,7 @@ public class TacacsClient extends Object
 	final boolean unencrypted;
 	/** Note: instance methods are synchronized to protect access to tacacs. */
 	private TacacsReader tacacs;
-	private final boolean debug;
+	private final Logger logger;
 
 	/**
 	 * Constructs a new TacacsClient that may be used for multiple calls to newSession().
@@ -63,7 +59,7 @@ public class TacacsClient extends Object
 	 * @param unencrypted A boolean indicating if the payload should remain unencrypted
 	 *   during transmission.
 	 */
-	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect, boolean unencrypted, boolean debug)
+	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect, boolean unencrypted, Logger debugLogger)
 	{
 		this.timeoutMillis = timeoutMillis;
 		this.keys = key.split("[,\\s]+");
@@ -71,7 +67,7 @@ public class TacacsClient extends Object
 		this.ports = new int[hosts.length];
 		this.singleConnect = singleConnect;
 		this.unencrypted = unencrypted;
-		this.debug = debug;
+		this.logger = debugLogger;
 		for (int i=hosts.length-1; i>=0; i--)
 		{
 			try
@@ -82,15 +78,15 @@ public class TacacsClient extends Object
 				ports[i] = uri.getPort();
 				if(ports[i] == -1)
 				{
-					log.trace("TACACS: No port assigned for host, \""+hosts[i]+"\".  " +
-						"Using default port "+TacacsReader.PORT_TACACS+" instead.");
-					ports[i] = TacacsReader.PORT_TACACS;
+                    debug("TACACS: No port assigned for host, \"" + hosts[i] + "\".  " + "Using default port "
+                            + TacacsReader.PORT_TACACS + " instead.");
+                    ports[i] = TacacsReader.PORT_TACACS;
 				}
 			}
 			catch (URISyntaxException e)
 			{
-				log.trace("TACACS: Bad port assigned for host, \""+hosts[i]+"\".  " +
-					"Using default port "+TacacsReader.PORT_TACACS+" instead.");
+                debug("TACACS: Bad port assigned for host, \"" + hosts[i] + "\".  " + "Using default port "
+                        + TacacsReader.PORT_TACACS + " instead.");
 				ports[i] = TacacsReader.PORT_TACACS;
 			}
 		}
@@ -111,9 +107,9 @@ public class TacacsClient extends Object
 	 *   it seems this must be set 'false' for Cisco ACS which closes socket
 	 *   despite offering to accept SINGLE_CONNECT mode.
 	 */
-	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect, boolean debug)
+	public TacacsClient(String host, String key, int timeoutMillis, boolean singleConnect, Logger debugLogger)
 	{
-		this(host, key, timeoutMillis, singleConnect, false, debug);
+		this(host, key, timeoutMillis, singleConnect, false, debugLogger);
 	}
 
 	/**
@@ -121,9 +117,9 @@ public class TacacsClient extends Object
 	 * @param host The comma and/or space-separated list of hostnames or IP addresses of TACACS+ servers; optionally with colon-separated port.
 	 * @param key The comma and/or space-separated list of secret keys shared with each TACACS+ server.
 	 */
-	public TacacsClient(String host, String key, boolean debug)
+	public TacacsClient(String host, String key, Logger debugLogger)
 	{
-		this(host, key, 5000, false, debug);
+		this(host, key, 5000, false, debugLogger);
 	}
 
 
@@ -150,7 +146,7 @@ public class TacacsClient extends Object
 	 */
 	public synchronized SessionClient newSession(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl) throws IOException {
 		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
-		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, singleConnect, unencrypted, debug);
+		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, singleConnect, unencrypted, logger);
 		t.addSession(s);
 		return s;
 	}
@@ -164,7 +160,7 @@ public class TacacsClient extends Object
 	 */
 	public synchronized SessionClient newSessionInteractive(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, UserInterface ui) throws IOException {
 		TacacsReader t = getTacacs(); // throws IOException and SocketTimeoutException (a subclass of IOException!)
-		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, ui, singleConnect, unencrypted, debug);
+		SessionClient s = new SessionClient(svc, port, rem_addr, priv_lvl, t, ui, singleConnect, unencrypted, logger);
 		t.addSession(s);
 		return s;
 	}
@@ -198,9 +194,9 @@ public class TacacsClient extends Object
 					sock = new Socket();
 					sock.connect(new InetSocketAddress(hosts[i],ports[i]), timeoutMillis); // throws IOException
 					String key = (i<keys.length) ? keys[i] : keys[keys.length-1]; // reuse last only if not enough
-					tacacs = new TacacsReader(sock, key, debug);
+					tacacs = new TacacsReader(sock, key, logger);
 					tacacs.start();
-					log.trace("TACACS: Connected to server at "+hosts[i]+":"+ports[i]);
+					debug("TACACS: Connected to server at "+hosts[i]+":"+ports[i]);
 					return tacacs;
 				}
 				catch(IOException ioe)
@@ -209,7 +205,9 @@ public class TacacsClient extends Object
 				        // ignore
 				    }
  					tacacs = null;
-					log.error("TACACS: Unable to contact TACACS+ server @ "+hosts[i]+" ("+ioe+")");
+ 					if (logger != null) {
+ 					    logger.error("TACACS: Unable to contact TACACS+ server @ "+hosts[i]+" ("+ioe+")");
+ 					}
 				}
 			}
 			if (tacacs == null) { throw new IOException("Unable to contact any TACACS+ server(s)."); }
@@ -248,9 +246,10 @@ public class TacacsClient extends Object
 		if (args.length==0) { System.out.println("java -jar tacacs.jar <host> <key>"); }
 		else
 		{
+		    Logger logger = Logger.getLogger(TacacsClient.class);
 			String host = args.length>0 ? args[0] : null;
 			String key = args.length>1 ? args[1] : "augur.com";
-			TacacsClient tc = new TacacsClient(host, key, true);
+			TacacsClient tc = new TacacsClient(host, key, logger);
 
 			// substitute another example here for testing
 			exampleAuthenInteractive(args, tc);
@@ -356,6 +355,10 @@ public class TacacsClient extends Object
 //		System.out.println("");
 //	}
 
-
+	private void debug(String msg) {
+	    if (logger != null) {
+	        logger.debug(msg);
+	    }
+	}
 
 }

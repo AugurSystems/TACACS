@@ -22,10 +22,8 @@ import org.apache.log4j.Logger;
 
 public class TacacsReader extends Thread
 {
-    private static final Logger log = Logger.getLogger(TacacsReader.class);
-
     public static final int PORT_TACACS = 49;
-	public final boolean debug;
+	public final Logger logger;
 
 	private final List<Session> sessions;
 	private final byte[] key;
@@ -35,7 +33,7 @@ public class TacacsReader extends Thread
 	private final OutputStream out;
 
 
-	protected TacacsReader(Socket socket, String key, boolean debug) throws IOException
+	protected TacacsReader(Socket socket, String key, Logger debugLogger) throws IOException
 	{
 		super("TACACS+");
 		setDaemon(true);
@@ -43,7 +41,7 @@ public class TacacsReader extends Thread
 		this.runnable = true;
 		this.sessions = new ArrayList<>();
 		this.socket = socket;
-		this.debug = debug;
+		this.logger = debugLogger;
 		din = new DataInputStream(socket.getInputStream());
 		out = socket.getOutputStream();
 	}
@@ -87,7 +85,7 @@ public class TacacsReader extends Thread
 		{
 			try
 			{
-				Packet p = Packet.readNext(this, key, debug);
+				Packet p = Packet.readNext(this, key, logger);
 				synchronized(sessions)
 				{
 					Session s = findSession(p.header.sessionID);
@@ -104,7 +102,7 @@ public class TacacsReader extends Thread
 							}
 						}
 					}
-					else if (debug) { log.debug("TACACS: couldn't find session for: "+p); }
+					else if (logger != null) { logger.debug("TACACS: couldn't find session for: "+p); }
 				}
 			}
 			catch (IOException e)
@@ -145,7 +143,7 @@ public class TacacsReader extends Thread
 			try
 			{
 				p.write(out, key);
-				if (debug) { log.debug("TACACS tx --> "+p); }
+				if (logger != null) { logger.debug("TX --> "+p); }
 			}
 			catch(IOException e)
 			{
