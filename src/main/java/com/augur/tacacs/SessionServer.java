@@ -1,18 +1,16 @@
 package com.augur.tacacs;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
-
 /**
  * @author Chris.Janicki@augur.com
  * Copyright 2016 Augur Systems, Inc.  All rights reserved.
  */
 public class SessionServer extends Session
 {
-	private final Logger logger;
+	private final DebugLogger logger;
 
 	/** Server-side constructor */
-	SessionServer(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, byte[] sessionID, Logger debugLogger)
+	SessionServer(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, byte[] sessionID, DebugLogger debugLogger)
 	{
 		super(svc, port, rem_addr, priv_lvl, tacacs, sessionID);
 		this.logger = debugLogger;

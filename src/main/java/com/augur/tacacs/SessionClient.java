@@ -8,8 +8,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Logger;
-
 /**
  * @author Chris.Janicki@augur.com
  * Copyright 2016 Augur Systems, Inc.  All rights reserved.
@@ -17,7 +15,7 @@ import org.apache.log4j.Logger;
 public class SessionClient extends Session
 {
     private static final int TIMEOUT_MILLIS = 5000; // TODO: don't hard-code
-	private final Logger logger;
+	private final DebugLogger logger;
 	private UserInterface ui;
 	private final boolean singleConnect;
 	private byte headerFlags;
@@ -28,7 +26,7 @@ public class SessionClient extends Session
 	//private String password;
 
 	/** Client-side constructor; end-user should use newSession() in TacacsReader. */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect, boolean unencrypted, Logger debugLogger)
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect, boolean unencrypted, DebugLogger debugLogger)
 	{
 		this(svc, port, rem_addr, priv_lvl, tacacs, null, singleConnect, unencrypted, debugLogger);
 	}
@@ -38,7 +36,7 @@ public class SessionClient extends Session
 	 * Only needed for interactive (ASCII) login,
 	 * which needs to prompt user for info via a UserInterface.
 	 */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, UserInterface ui, boolean singleConnect, boolean unencrypted, Logger debugLogger)
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, UserInterface ui, boolean singleConnect, boolean unencrypted, DebugLogger debugLogger)
 	{
 		super(svc, port, rem_addr, priv_lvl, tacacs, null);
 		this.ui = ui;

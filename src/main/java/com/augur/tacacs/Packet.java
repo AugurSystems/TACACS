@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 
-import org.apache.log4j.Logger;
-
 /**
  * Each TACACS+ packet has a standard header.  The body structure is variable.
  * This class is abstract, implemented for specific packet types by subclasses:
@@ -51,7 +49,7 @@ public abstract class Packet
 	 * @return A Packet subclass instance: AuthenReply, AcctReply, or AuthorReply
 	 * @throws IOException
 	 */
-	public static Packet readNext(TacacsReader tacacs, byte[] key, Logger logger) throws IOException
+	public static Packet readNext(TacacsReader tacacs, byte[] key, DebugLogger logger) throws IOException
 	{
 		byte[] headerBytes = new byte[12];
 //		System.out.println("Waiting to read a header...");

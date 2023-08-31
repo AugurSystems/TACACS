@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.log4j.Logger;
-
 /**
  * This is a placeholder for a TACACS+ server implementation;
  * a skeleton implementation is started here, but there is no reference to any
@@ -25,7 +23,7 @@ public class TacacsServer extends TacacsReader
 {
 
 
-	private TacacsServer(Socket socket, String key, Logger debugLogger) throws IOException
+	private TacacsServer(Socket socket, String key,DebugLogger debugLogger) throws IOException
 	{
 		super(socket, key, debugLogger);
 	}
@@ -36,13 +34,14 @@ public class TacacsServer extends TacacsReader
 	public static void main(String[] args) throws IOException, TimeoutException
 	{
 		String key = args[0];
-		ServerSocket ss = new ServerSocket(PORT_TACACS);
-		while (true)
-		{
-			Socket s = ss.accept();
-			TacacsServer ts = new TacacsServer(s, key, null);
-			ts.start();
-		}
+		try (ServerSocket ss = new ServerSocket(PORT_TACACS)) {
+            while (true)
+            {
+            	Socket s = ss.accept();
+            	TacacsServer ts = new TacacsServer(s, key, null);
+            	ts.start();
+            }
+        }
 	}
 
 

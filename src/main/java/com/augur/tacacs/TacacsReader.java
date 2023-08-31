@@ -8,8 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 /**
  * This is used by both TACACS+ client and server for reading incoming packet.
  * <p>
@@ -23,7 +21,7 @@ import org.apache.log4j.Logger;
 public class TacacsReader extends Thread
 {
     public static final int PORT_TACACS = 49;
-	public final Logger logger;
+	public final DebugLogger logger;
 
 	private final List<Session> sessions;
 	private final byte[] key;
@@ -33,7 +31,7 @@ public class TacacsReader extends Thread
 	private final OutputStream out;
 
 
-	protected TacacsReader(Socket socket, String key, Logger debugLogger) throws IOException
+	protected TacacsReader(Socket socket, String key, DebugLogger debugLogger) throws IOException
 	{
 		super("TACACS+");
 		setDaemon(true);
