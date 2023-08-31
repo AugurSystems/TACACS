@@ -12,7 +12,7 @@ This Java API was developed to integrate our customers' existing TACACS+ servers
 
 ## Understanding TACACS+
 
-You will need a good understanding of TACACS+.  The IETF documentation is the best source, although necessarily technical.  Please start by reading through the (now) published IETF RFC on The Terminal Access Controller Access-Control System Plus (TACACS+) Protocol, [RFC 8907](https://datatracker.ietf.org/doc/html/rfc8907) which was published in September 2020.
+You will need a good understanding of TACACS+.  The IETF documentation is the best source, although necessarily technical.  Please start by reading through the (now) published IETF RFC on The Terminal Access Controller Access-Control System Plus (TACACS+) Protocol, [RFC 8907](https://datatracker.ietf.org/doc/html/rfc8907), which was published in September 2020.
 
 ## Getting Started
 
