@@ -4,7 +4,7 @@
 	Just run 'ant' in the directory containing this build.xml.
 	ANT will compile and jar the results into ../dist/tacacs.jar
 -->
-<project basedir=".." default="build" name="TACACS">
+<project basedir="." default="build" name="TACACS">
 	<description>
 		API for TACACS+ clients or servers
 	</description>
@@ -16,7 +16,7 @@
 	
 	<property name ="javacVersion" value="1.8"/>
 	<property name ="distDir" value="dist"/>
-	<property name ="src" value="src"/>
+	<property name ="src" value="src/main/java"/>
 	<property name ="classes" value="build/classes"/>
 	<property name ="tacacsJar" value="${distDir}/tacacs.jar"/>
 

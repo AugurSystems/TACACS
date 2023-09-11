@@ -20,7 +20,7 @@ public class AuthorRequest extends Packet
 	final String port;
 	final String rem_addr;
 	final Argument[] arguments;
-	
+
 	@Override public String toString()
 	{
 		StringBuilder sb = new StringBuilder(100);
@@ -37,8 +37,8 @@ public class AuthorRequest extends Packet
 		sb.append("]]");
 		return sb.toString();
 	}
-	
-	
+
+
 	/**
 	 * Constructor for when reading incoming packets.
 	 */
@@ -61,21 +61,21 @@ public class AuthorRequest extends Packet
 		i=body[5];     port = (i>0) ? new String(body, offset, i, StandardCharsets.UTF_8) : null; offset+=i;
 		i=body[6]; rem_addr = (i>0) ? new String(body, offset, i, StandardCharsets.UTF_8) : null; offset+=i;
 		arguments = new Argument[arg_cnt];
-		for (int a=0; a<arg_cnt; a++) 
-		{ 
+		for (int a=0; a<arg_cnt; a++)
+		{
 			String arg = new String(body, offset, body[overhead+a], StandardCharsets.UTF_8);
-			arguments[a] = new Argument(arg); 
-			offset+=body[overhead+a]; 
+			arguments[a] = new Argument(arg);
+			offset+=body[overhead+a];
 		}
 	}
 
-	
+
 	/**
 	 * Constructor for when building outgoing packets.
 	 */
 	AuthorRequest
 	(
-		Header header, 
+		Header header,
 		TAC_PLUS.AUTHEN.METH authen_method,
 		byte priv_lvl,
 		TAC_PLUS.AUTHEN.TYPE authen_type,
@@ -107,16 +107,19 @@ public class AuthorRequest extends Packet
 	 */
 	@Override void write(OutputStream out, byte[] key) throws IOException
 	{
-		byte[] userBytes = user.getBytes(StandardCharsets.UTF_8); 
+		byte[] userBytes = user.getBytes(StandardCharsets.UTF_8);
 		byte[] portBytes = port.getBytes(StandardCharsets.UTF_8);
 		byte[] remaBytes = rem_addr.getBytes(StandardCharsets.UTF_8);
+        if (userBytes == null || portBytes == null || remaBytes == null) {
+            throw new NullPointerException("userBytes/portBytes/remaBytes is null (should not happen)");
+        }
 		// Truncating to fit packet...  lengths are limited to a byte
-		if (userBytes!=null && userBytes.length>FF) { userBytes = Arrays.copyOfRange(userBytes,0,FF); }
-		if (portBytes!=null && portBytes.length>FF) { portBytes = Arrays.copyOfRange(portBytes,0,FF); }
-		if (remaBytes!=null && remaBytes.length>FF) { remaBytes = Arrays.copyOfRange(remaBytes,0,FF); }
+		if (userBytes.length>FF) { userBytes = Arrays.copyOfRange(userBytes,0,FF); }
+		if (portBytes.length>FF) { portBytes = Arrays.copyOfRange(portBytes,0,FF); }
+		if (remaBytes.length>FF) { remaBytes = Arrays.copyOfRange(remaBytes,0,FF); }
 		// Truncating the number of arguments, and the length of the byte[] representations... limited to a byte
 		byte[][] argsBytes = new byte[Math.min(FF,arguments.length)][];
-		for (int i=0; i<argsBytes.length; i++) 
+		for (int i=0; i<argsBytes.length; i++)
 		{
 			argsBytes[i] = arguments[i].toString().getBytes(StandardCharsets.UTF_8);
 			if (argsBytes[i].length>FF) { argsBytes[i] = Arrays.copyOfRange(argsBytes[i],0,FF); }
@@ -138,5 +141,5 @@ public class AuthorRequest extends Packet
 		for (byte[] aBytes : argsBytes) { body.write(aBytes); }
 		header.writePacket(out, body.toByteArray(), key);
 	}
-	
+
 }

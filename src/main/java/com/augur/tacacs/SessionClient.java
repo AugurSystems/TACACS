@@ -1,4 +1,6 @@
 package com.augur.tacacs;
+
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -12,31 +14,35 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SessionClient extends Session
 {
-	private static final int TIMEOUT_MILLIS = 5000; // TODO: don't hard-code
-	private static final boolean DEBUG = false;
-	private final UserInterface ui;
+    private static final int TIMEOUT_MILLIS = 5000; // TODO: don't hard-code
+	private final DebugLogger logger;
+	private UserInterface ui;
 	private final boolean singleConnect;
 	private byte headerFlags;
 	private static final AtomicInteger PPP_ID = new AtomicInteger(); // for CHAP
 	private static final int CHAP_CHALLENGE_LENGTH = 16;
 
+	//private String user;
+	//private String password;
+
 	/** Client-side constructor; end-user should use newSession() in TacacsReader. */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect, boolean unencrypted)
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, boolean singleConnect, boolean unencrypted, DebugLogger debugLogger)
 	{
-		this(svc, port, rem_addr, priv_lvl, tacacs, null, singleConnect, unencrypted);
+		this(svc, port, rem_addr, priv_lvl, tacacs, null, singleConnect, unencrypted, debugLogger);
 	}
-	
-	/** 
+
+	/**
 	 * Client-side constructor; end-user should use newSession() in TacacsReader.
-	 * Only needed for interactive (ASCII) login, 
-	 * which needs to prompt user for info via a UserInterface. 
+	 * Only needed for interactive (ASCII) login,
+	 * which needs to prompt user for info via a UserInterface.
 	 */
-	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, UserInterface ui, boolean singleConnect, boolean unencrypted)
+	SessionClient(TAC_PLUS.AUTHEN.SVC svc, String port, String rem_addr, byte priv_lvl, TacacsReader tacacs, UserInterface ui, boolean singleConnect, boolean unencrypted, DebugLogger debugLogger)
 	{
 		super(svc, port, rem_addr, priv_lvl, tacacs, null);
 		this.ui = ui;
 		this.singleConnect = singleConnect;
 		this.headerFlags = FLAG_ZERO;
+		this.logger = debugLogger;
 		if (singleConnect) {
 			this.headerFlags |= TAC_PLUS.PACKET.FLAG.SINGLE_CONNECT.code();
 		}
@@ -45,24 +51,23 @@ public class SessionClient extends Session
 		}
 	}
 
-	/** 
-	 * @return A boolean indicating if the first packet received during this session had the SINGLE_CONNECT flag set 
-	 * @see TACACS+ specification, section 3.3 "Single Connect Mode" 
+	/**
+	 * @return A boolean indicating if the first packet received during this session had the SINGLE_CONNECT flag set
+	 * @see TACACS+ specification, section 3.3 "Single Connect Mode"
 	 */
-	@Override boolean isSingleConnectMode() 
+	@Override boolean isSingleConnectMode()
 	{
-		return super.isSingleConnectMode() && singleConnect; 
+		return super.isSingleConnectMode() && singleConnect;
 	}
 
 	/**
 	 * Calls notify() to inform public methods when the final reply packet has been received.
 	 * @param p
-	 * @throws IOException 
+	 * @throws IOException
 	 */
-	@Override synchronized void handlePacket(Packet p) throws IOException
-	{
+	@Override synchronized void handlePacket(Packet p) throws IOException {
 		super.handlePacket(p); // stores firstPacket, for isSingleConnectMode()
-		if (DEBUG) { System.out.println("Received <-- "+p); }
+		if (logger != null) { logger.debug("RCV <-- "+p); }
 		switch(p.header.type)
 		{
 			case AUTHEN: // must be a Reply from the server
@@ -77,9 +82,10 @@ public class SessionClient extends Session
 						String data = ui.getUserInput(authenReply.server_msg, authenReply.hasFlag(TAC_PLUS.REPLY.FLAG.NOECHO), authenReply.status); // blocks for user input
 						tacacs.write(new AuthenContinue
 						(
-							p.getHeader().next(TAC_PLUS.PACKET.VERSION.v13_0), 
+							p.getHeader().next(TAC_PLUS.PACKET.VERSION.v13_0),
 							data,
-							FLAG_ZERO
+							FLAG_ZERO,
+							false
 						));
 						break;
 					case GETUSER: // only used during ASCII (interactive) AUTHEN LOGIN
@@ -87,9 +93,10 @@ public class SessionClient extends Session
 						String username = ui.getUserInput(authenReply.server_msg, authenReply.hasFlag(TAC_PLUS.REPLY.FLAG.NOECHO), authenReply.status); // blocks for user input
 						tacacs.write(new AuthenContinue
 						(
-							p.getHeader().next(TAC_PLUS.PACKET.VERSION.v13_0), 
+							p.getHeader().next(TAC_PLUS.PACKET.VERSION.v13_0),
 							username,
-							FLAG_ZERO
+							FLAG_ZERO,
+							false
 						));
 						break;
 					case GETPASS:
@@ -97,12 +104,13 @@ public class SessionClient extends Session
 						String password = ui.getUserInput(authenReply.server_msg, authenReply.hasFlag(TAC_PLUS.REPLY.FLAG.NOECHO), authenReply.status); // blocks for user input
 						tacacs.write(new AuthenContinue
 						(
-							p.getHeader().next(TAC_PLUS.PACKET.VERSION.v13_0), 
+							p.getHeader().next(TAC_PLUS.PACKET.VERSION.v13_0),
 							password,
-							FLAG_ZERO
+							FLAG_ZERO,
+							true
 						));
 						break;
-					case RESTART: // per spec, server didn't like our authen_type; TODO: try types? 
+					case RESTART: // per spec, server didn't like our authen_type; TODO: try types?
 					case ERROR: // per spec, "...should proceed as if that host could not be contacted..."
 					case FAIL:
 					case FOLLOW: // not implemented, so spec says must treat as FAIL; TODO implement, and remember the working server
@@ -117,10 +125,12 @@ public class SessionClient extends Session
 			case ACCT:
 				end(p);
 				break;
+			default:
+			    break;
 		}
 	}
-	
-	
+
+
 	/**
 	 * @return An AuthenReply representing the result of the login attempt
 	 * possibly null if the connection was closed before a response was processed.
@@ -132,24 +142,85 @@ public class SessionClient extends Session
 		tacacs.write(new AuthenStart
 		(
 			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
-			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
+			TAC_PLUS.AUTHEN.ACTION.LOGIN,
 			priv_lvl,
-			TAC_PLUS.AUTHEN.TYPE.ASCII, 
-			TAC_PLUS.AUTHEN.SVC.NONE, 
+			TAC_PLUS.AUTHEN.TYPE.ASCII,
+			TAC_PLUS.AUTHEN.SVC.NONE,
 			null, // server will prompts for username
-			port, 
-			rem_addr, 
+			port,
+			rem_addr,
 			(String)null // server will prompt for password
-		)); 
+		));
 		waitForeverForReply();
 		return (AuthenReply)result;
 	}
 
-	
+
+	/**
+	 * @return An AuthenReply representing the result of the login attempt
+	 * possibly null if the connection was closed before a response was processed.
+	 * We can speed things up by sending the username as part of our intial request.
+	 * @throws java.util.concurrent.TimeoutException
+	 * @throws java.io.IOException
+	 */
+	public synchronized AuthenReply authenticate_ASCII(String username) throws TimeoutException, IOException
+	{
+		tacacs.write(new AuthenStart
+				(
+						new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_0, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
+						TAC_PLUS.AUTHEN.ACTION.LOGIN,
+						priv_lvl,
+						TAC_PLUS.AUTHEN.TYPE.ASCII,
+						TAC_PLUS.AUTHEN.SVC.NONE,
+						username, // server will prompts for username
+						port,
+						rem_addr,
+						(String) null// server will prompt for password
+				));
+		waitForeverForReply();
+		return (AuthenReply)result;
+	}
+
+	/**
+	 * @return An AuthenReply representing the result of the login attempt
+	 * possibly null if the connection was closed before a response was processed.
+	 * We can speed things up by sending the username as part of our intial request.
+	 * @throws java.util.concurrent.TimeoutException
+	 * @throws java.io.IOException
+	 */
+	public synchronized AuthenReply authenticate_ASCII(String username, String password) throws TimeoutException, IOException
+	{
+		//Save current UI
+		UserInterface currentUi = ui;
+
+		ui = new UserInterface() {
+			@Override
+			public String getUserInput(String prompt, boolean noEcho, TAC_PLUS.AUTHEN.STATUS getWhat) {
+				switch (getWhat) {
+					case GETPASS:
+						return password;
+					case GETUSER:
+						//Not actually needed. But we make it available anyway-
+						return username;
+					default:
+							return "";
+				}
+
+			}
+		};
+		AuthenReply authenReply = authenticate_ASCII(username);
+		//Reset existing UI
+		ui = currentUi;
+
+		return authenReply;
+
+	}
+
+
 	/**
 	 * Authenticates the client using PAP.
 	 * @see The TACACS+ Protocol IETF draft, currently at https://www.ietf.org/id/draft-ietf-opsawg-tacacs-06.txt
-	 * 
+	 *
 	 * @param username
 	 * @param password
 	 * @return An AuthenReply representing the result of the login attempt;
@@ -157,33 +228,33 @@ public class SessionClient extends Session
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
-	public synchronized AuthenReply authenticate_PAP(String username, String password) throws TimeoutException, IOException 
+	public synchronized AuthenReply authenticate_PAP(String username, String password) throws TimeoutException, IOException
 	{
 		tacacs.write(new AuthenStart
 		(
 			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_1, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
-			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
+			TAC_PLUS.AUTHEN.ACTION.LOGIN,
 			priv_lvl,
-			TAC_PLUS.AUTHEN.TYPE.PAP, 
-			TAC_PLUS.AUTHEN.SVC.NONE, 
-			username, 
-			port, 
-			rem_addr, 
+			TAC_PLUS.AUTHEN.TYPE.PAP,
+			TAC_PLUS.AUTHEN.SVC.NONE,
+			username,
+			port,
+			rem_addr,
 			password
-		)); 
+		));
 		waitForReply(TIMEOUT_MILLIS);
 		return (AuthenReply)result;
 	}
 
-	
+
 	/**
-	 * Authenticates the client using CHAP, which avoids sending the password over the 
-	 * network (which PAP does), although the packet is already encrypted, so 
+	 * Authenticates the client using CHAP, which avoids sending the password over the
+	 * network (which PAP does), although the packet is already encrypted, so
 	 * it's just extra protection.
-	 * 
+	 *
 	 * @see The TACACS+ Protocol IETF draft, currently at https://www.ietf.org/id/draft-ietf-opsawg-tacacs-06.txt
 	 * @see The RFC 1334 Section 3 for some details of the CHAP protocol.
-	 * 
+	 *
 	 * @param username
 	 * @param password
 	 * @return An AuthenReply representing the result of the login attempt;
@@ -205,19 +276,19 @@ public class SessionClient extends Session
 		byte[] response = md.digest();
 		System.arraycopy(challenge, 0, data, 1, challenge.length);
 		System.arraycopy(response, 0, data, 1+challenge.length, response.length);
-		
+
 		tacacs.write(new AuthenStart
 		(
 			new Header(this.headerFlags, TAC_PLUS.PACKET.VERSION.v13_1, TAC_PLUS.PACKET.TYPE.AUTHEN,id),
-			TAC_PLUS.AUTHEN.ACTION.LOGIN, 
+			TAC_PLUS.AUTHEN.ACTION.LOGIN,
 			priv_lvl,
-			TAC_PLUS.AUTHEN.TYPE.CHAP, 
-			TAC_PLUS.AUTHEN.SVC.NONE, 
-			username, 
-			port, 
-			rem_addr, 
+			TAC_PLUS.AUTHEN.TYPE.CHAP,
+			TAC_PLUS.AUTHEN.SVC.NONE,
+			username,
+			port,
+			rem_addr,
 			data
-		)); 
+		));
 		waitForReply(TIMEOUT_MILLIS);
 		return (AuthenReply)result;
 	}
@@ -233,7 +304,8 @@ public class SessionClient extends Session
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
-	public synchronized AuthorReply authorize(String username, TAC_PLUS.AUTHEN.METH authen_meth, TAC_PLUS.AUTHEN.TYPE authen_type, TAC_PLUS.AUTHEN.SVC authen_svc, Argument[] args) throws TimeoutException, IOException 
+	@SuppressWarnings("hiding")
+    public synchronized AuthorReply authorize(String username, TAC_PLUS.AUTHEN.METH authen_meth, TAC_PLUS.AUTHEN.TYPE authen_type, TAC_PLUS.AUTHEN.SVC authen_svc, Argument[] args) throws TimeoutException, IOException
 	{
 		tacacs.write(new AuthorRequest
 		(
@@ -246,11 +318,11 @@ public class SessionClient extends Session
 			port,
 			rem_addr,
 			args
-		)); 
+		));
 		waitForReply(TIMEOUT_MILLIS);
 		return (AuthorReply)result;
 	}
-	
+
 	/**
 	 * @param flags
 	 * @param username
@@ -263,7 +335,8 @@ public class SessionClient extends Session
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
-	public synchronized AcctReply account(byte flags, String username, TAC_PLUS.AUTHEN.METH authen_meth, TAC_PLUS.AUTHEN.TYPE authen_type, TAC_PLUS.AUTHEN.SVC authen_svc, Argument[] args) throws TimeoutException, IOException 
+	@SuppressWarnings("hiding")
+    public synchronized AcctReply account(byte flags, String username, TAC_PLUS.AUTHEN.METH authen_meth, TAC_PLUS.AUTHEN.TYPE authen_type, TAC_PLUS.AUTHEN.SVC authen_svc, Argument[] args) throws TimeoutException, IOException
 	{
 		if (
 			flags!=TAC_PLUS.ACCT.FLAG.START.code() &&
@@ -283,24 +356,24 @@ public class SessionClient extends Session
 			port,
 			rem_addr,
 			args
-		)); 
+		));
 		waitForReply(TIMEOUT_MILLIS);
 		return (AcctReply)result;
 	}
 
 	/**
-	 * Authorizes, assuming authen_meth=TACACS+, authen_type=PAP, and authen_svc=LOGIN. 
+	 * Authorizes, assuming authen_meth=TACACS+, authen_type=PAP, and authen_svc=LOGIN.
 	 * @param username
 	 * @param args
 	 * @return An AuthorReply representing the result of the authorization attempt
 	 * @throws java.util.concurrent.TimeoutException
 	 * @throws java.io.IOException
 	 */
-	public synchronized AuthorReply authorize(String username, Argument[] args) throws TimeoutException, IOException 
+	public synchronized AuthorReply authorize(String username, Argument[] args) throws TimeoutException, IOException
 	{
 		return authorize(username, TAC_PLUS.AUTHEN.METH.TACACSPLUS, TAC_PLUS.AUTHEN.TYPE.PAP, TAC_PLUS.AUTHEN.SVC.LOGIN, args);
 	}
 
 
-	
+
 }

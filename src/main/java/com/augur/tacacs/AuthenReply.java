@@ -1,5 +1,4 @@
 package com.augur.tacacs;
-import static com.augur.tacacs.Packet.FFFF;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -41,19 +40,19 @@ public class AuthenReply extends Packet
 		status = TAC_PLUS.AUTHEN.STATUS.forCode(body[0]);
 		if (status == null) { throw new IOException("Received unknown TAC_PLUS_AUTHEN_STATUS code: "+body[0]); }
 		flags = body[1];
-		server_msg = (msgLen>0) ? new String(body, overhead, msgLen, StandardCharsets.UTF_8) : null; 
-		data = (dataLen>0) ? new String(body, overhead+msgLen, dataLen, StandardCharsets.UTF_8) : null; 
+		server_msg = (msgLen>0) ? new String(body, overhead, msgLen, StandardCharsets.UTF_8) : null;
+		data = (dataLen>0) ? new String(body, overhead+msgLen, dataLen, StandardCharsets.UTF_8) : null;
 	}
 
-	
+
 	@Override public String toString()
 	{
 		return getClass().getSimpleName()+":"+header+"[status:"+status+" flags:"+flags+" server_msg:'"+server_msg+"' data:'"+data+"']";
 	}
-	
-	
-	@Override boolean isEndOfSession() 
-	{ 
+
+
+	@Override boolean isEndOfSession()
+	{
 		switch(status)
 		{
 			case ERROR:
@@ -69,9 +68,9 @@ public class AuthenReply extends Packet
 				return false;
 		}
 	}
-	
+
 	public boolean isOK() { return status == TAC_PLUS.AUTHEN.STATUS.PASS; }
-	
+
 
 	/**
 	 * Writes the whole packet.
@@ -96,7 +95,7 @@ public class AuthenReply extends Packet
 		byte[] bodyBytes = body.toByteArray();
 		header.writePacket(out, bodyBytes, key);
 	}
-	
+
 
 	boolean hasFlag(TAC_PLUS.REPLY.FLAG flag)
 	{
@@ -104,8 +103,8 @@ public class AuthenReply extends Packet
 	}
 
 
-	/** 
-	 * @return A String message from the server, intended for display to the user; 
+	/**
+	 * @return A String message from the server, intended for display to the user;
 	 * probably null if the authentication was successful.
 	 */
 	public String getServerMsg()
@@ -114,14 +113,14 @@ public class AuthenReply extends Packet
 	}
 
 
-	/** 
-	 * @return A String message from the server, intended for display to the admin usually via console or log; 
+	/**
+	 * @return A String message from the server, intended for display to the admin usually via console or log;
 	 * probably null if the authentication was successful.
 	 */
 	public String getData()
 	{
 		return data;
 	}
-	
-	
+
+
 }
